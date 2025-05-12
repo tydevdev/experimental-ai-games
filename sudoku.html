@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Apply the game font */
+        :root {
+            /* Default Theme (Arcade) - Ensure high contrast */
+            --bg-color: #1a1a2e;
+            --text-color: #e0e0e0;
+            --primary-accent: #00ffcc; /* Cyan */
+            --secondary-accent: #e43f5a; /* Red */
+            --tertiary-accent: #a0a0ff; /* Light purple */
+            --grid-bg: #4a4a8a;
+            --cell-bg: #162447;
+            --cell-prefilled-bg: #1f4068;
+            --cell-border: #4a4a8a;
+            --cell-border-thick: #6a6abf;
+            --highlight-related-bg: rgba(74, 74, 138, 0.6);
+            --highlight-selected-bg: rgba(0, 255, 204, 0.3);
+            --highlight-selected-outline: #00ffcc;
+            --candidate-color: #a0a0ff;
+            --input-color: #00ffcc;
+            --button-bg: #e43f5a;
+            --button-text: #ffffff;
+            --button-shadow: #a32d41;
+            --button-hover-bg: #f55874;
+            --button-active-shadow: #a32d41;
+            --button-selected-bg: var(--primary-accent);
+            --button-selected-text: var(--cell-bg); /* High contrast needed */
+            --button-selected-shadow: var(--input-color);
+            --button-start-bg: #28a745;
+            --button-start-shadow: #1c7430;
+            --button-start-hover-bg: #34c759;
+            --button-start-active-shadow: #1c7430;
+            --message-correct-bg: #28a745;
+            --message-incorrect-bg: #dc3545;
+            --message-text: #ffffff;
+        }
+
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 1rem;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        /* --- Main Menu Styling --- */
+        #main-menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--cell-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 3px solid var(--grid-bg);
+            box-shadow: 0 0 20px rgba(74, 74, 138, 0.8);
+            width: 95%;
+            max-width: 550px;
+            margin-bottom: 1rem;
+        }
+        #main-menu h1 {
+             color: var(--primary-accent);
+             margin-bottom: 1rem;
+             font-size: clamp(1.5rem, 5vw, 2rem);
+             text-align: center;
+        }
+         #main-menu h2 {
+             color: var(--tertiary-accent);
+             margin-bottom: 0.5rem;
+             font-size: clamp(0.9rem, 3vw, 1rem);
+             text-align: center;
+         }
+        .menu-section {
+            margin-bottom: 1rem;
+            width: 100%;
+            text-align: center;
+        }
+        .menu-options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 5px;
+            justify-content: center;
+            width: 100%;
+        }
+        .menu-options-grid button {
+            margin: 3px;
+            padding: 8px 5px;
+            font-size: clamp(0.6rem, 2vw, 0.75rem);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .difficulty-options button {
+             font-size: clamp(0.7rem, 2.5vw, 0.8rem);
+             padding: 8px 10px;
+        }
+        /* Selected state for Difficulty buttons */
+        .difficulty-options .selected {
+             background-color: var(--button-selected-bg);
+             color: var(--button-selected-text) !important; /* Ensure contrast */
+             box-shadow: 0 2px var(--button-selected-shadow);
+             border: 1px solid var(--button-selected-shadow);
+        }
+        /* Theme buttons specific styling */
+        #theme-selector .theme-button {
+             border: 2px solid transparent;
+             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+             /* Inherit base styles from .game-button */
+        }
+         #theme-selector .theme-button.selected {
+             border-color: var(--primary-accent);
+             box-shadow: 0 0 5px var(--primary-accent);
+             /* Base bg/color comes from applied theme's .game-button */
+         }
+
+        /* --- Game Area Styling --- */
+        #game-area {
+            display: none;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+            gap: 1rem;
+        }
+        #game-controls-area {
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+             width: 100%;
+             margin-top: 1rem;
+        }
+        .game-controls-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* --- Grid & Cell Styling --- */
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, minmax(0, 1fr));
+            grid-template-rows: repeat(9, minmax(0, 1fr));
+            width: 90vw;
+            max-width: 500px;
+            height: 90vw;
+            max-height: 500px;
+            border: 4px solid var(--grid-bg);
+            border-radius: 8px;
+            gap: 1px;
+            background-color: var(--grid-bg);
+            box-shadow: 0 0 15px rgba(74, 74, 138, 0.7);
+            flex-shrink: 0;
+        }
+        .sudoku-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--cell-bg);
+            font-size: clamp(1rem, 4vw, 1.8rem);
+            font-weight: bold;
+            border: 1px solid var(--cell-border);
+            color: var(--text-color);
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            text-align: center;
+        }
+        /* Cell Content (Input, Span) */
+        .sudoku-cell > input,
+        .sudoku-cell > span {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            line-height: inherit;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+        }
+        .sudoku-cell input {
+            text-align: center;
+            border: none;
+            background-color: transparent;
+            color: var(--input-color);
+            font-size: inherit;
+            font-family: inherit;
+            outline: none;
+            caret-color: var(--input-color);
+            cursor: pointer;
+        }
+        .sudoku-cell.pre-filled {
+            background-color: var(--cell-prefilled-bg);
+            color: var(--tertiary-accent);
+            font-weight: normal;
+            cursor: default;
+        }
+        /* Thick borders */
+        .sudoku-cell:nth-child(3n) { border-right-width: 3px; border-right-color: var(--cell-border-thick); }
+        .sudoku-cell:nth-child(9n) { border-right-width: 1px; border-right-color: var(--cell-border); }
+        .sudoku-grid > .sudoku-cell:nth-child(n+19):nth-child(-n+27),
+        .sudoku-grid > .sudoku-cell:nth-child(n+46):nth-child(-n+54) {
+            border-bottom-width: 3px; border-bottom-color: var(--cell-border-thick);
+        }
+         /* Focus style */
+        .sudoku-cell input:focus {
+            background-color: rgba(0, 255, 204, 0.1);
+        }
+
+        /* --- Candidate Display --- */
+        .candidate-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            padding: 1px;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .candidate-grid span {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(0.5rem, 1.5vw, 0.7rem);
+            color: var(--candidate-color);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            line-height: 1;
+        }
+        .candidate-grid span.visible {
+             opacity: 1;
+        }
+         .sudoku-cell.has-candidates input {
+             opacity: 0;
+             pointer-events: none;
+         }
+
+
+        /* --- Highlighting Styles (Pseudo-elements) --- */
+        .sudoku-cell::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: transparent;
+            opacity: 0;
+            transition: background-color 0.2s ease, opacity 0.2s ease;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .sudoku-cell.highlight-related::before {
+             background-color: var(--highlight-related-bg);
+             opacity: 1;
+        }
+         .sudoku-cell.selected-cell::before {
+             background-color: var(--highlight-selected-bg);
+             opacity: 1;
+         }
+         .sudoku-cell.selected-cell {
+             outline: 2px solid var(--highlight-selected-outline);
+             z-index: 20;
+         }
+
+
+        /* --- Candidate Input Panel --- */
+        #candidate-panel {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem;
+            background-color: var(--cell-bg);
+            border: 2px solid var(--grid-bg);
+            border-radius: 8px;
+            width: 150px; /* Keep increased width */
+            flex-shrink: 0;
+        }
+        #candidate-panel h3 {
+            font-size: clamp(0.7rem, 2.5vw, 0.8rem);
+            margin-bottom: 0.75rem;
+            color: var(--tertiary-accent);
+            text-align: center;
+            width: 100%;
+            line-height: 1.2;
+        }
+        .candidate-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            width: 100%;
+        }
+        .candidate-buttons button {
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--cell-prefilled-bg);
+            color: var(--candidate-color);
+            padding: 10px 0;
+            border: 1px solid var(--cell-border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .candidate-buttons button:hover {
+            background-color: var(--grid-bg);
+        }
+        .candidate-buttons button.selected-candidate {
+            background-color: var(--button-selected-bg);
+            color: var(--button-selected-text) !important; /* Ensure text contrast */
+            font-weight: bold;
+        }
+
+
+        /* --- General Button Styling --- */
+        .game-button {
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: clamp(0.65rem, 2vw, 0.75rem);
+            margin: 0;
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.1s ease, box-shadow 0.1s ease;
+            box-shadow: 0 3px var(--button-shadow);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .game-button:hover {
+            background-color: var(--button-hover-bg);
+        }
+        .game-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px var(--button-active-shadow);
+        }
+         #start-game-btn {
+            margin-top: 1rem;
+            padding: 10px 15px;
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            background-color: var(--button-start-bg);
+            box-shadow: 0 4px var(--button-start-shadow);
+        }
+        #start-game-btn:hover {
+             background-color: var(--button-start-hover-bg);
+        }
+         #start-game-btn:active {
+            box-shadow: 0 2px var(--button-start-active-shadow);
+            transform: translateY(2px);
+         }
+         /* Mode Toggle Button Selected State */
+         #mode-toggle-btn.selected { /* Style when 'Candidates' mode is active */
+             background-color: var(--button-selected-bg);
+             color: var(--button-selected-text) !important; /* Ensure contrast */
+             box-shadow: 0 2px var(--button-selected-shadow);
+         }
+
+
+        /* --- Message Box Styling --- */
+        #message-box {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            min-height: 35px;
+            transition: opacity 0.5s ease, background-color 0.3s ease, color 0.3s ease;
+            width: 90%;
+            max-width: 500px;
+            color: var(--message-text);
+            overflow-wrap: break-word;
+        }
+        .message-correct {
+            background-color: var(--message-correct-bg);
+        }
+        .message-incorrect {
+            background-color: var(--message-incorrect-bg);
+        }
+        /* Hide number input spinners */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+
+        /* Utility classes */
+        .hidden { display: none; }
+
+         /* --- Responsive adjustments --- */
+         @media (max-width: 640px) {
+             body { padding: 0.5rem; align-items: flex-start; }
+             .game-container { max-width: 100%; }
+             #main-menu { max-width: 95%; padding: 1rem; }
+             #game-area { flex-direction: column; align-items: center; }
+             #candidate-panel { width: 80%; max-width: 280px; margin-top: 1rem; }
+             .sudoku-grid { width: 95vw; height: 95vw; max-width: 400px; max-height: 400px; }
+             .sudoku-cell { font-size: clamp(1rem, 5vw, 1.5rem); }
+             .candidate-grid span { font-size: clamp(0.4rem, 1.8vw, 0.6rem); }
+             .game-controls-buttons { gap: 5px; }
+             .game-button { padding: 6px 8px; }
+             #start-game-btn { padding: 8px 12px; }
+         }
+         @media (max-width: 380px) {
+             .menu-options-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); }
+             .menu-options-grid button { font-size: 0.6rem; padding: 6px 4px; }
+             .difficulty-options button { font-size: 0.65rem; }
+             #candidate-panel { width: 90%; }
+             #candidate-panel h3 { font-size: 0.7rem;}
+             .candidate-buttons button { font-size: 0.7rem; padding: 6px 0;}
+             .game-button { font-size: 0.6rem; }
+             #start-game-btn { font-size: 0.7rem; }
+             #message-box { font-size: 0.75rem; }
+         }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+
+        <div id="main-menu">
+            <h1>Sudoku</h1>
+            <div class="menu-section difficulty-options">
+                <h2>Select Difficulty:</h2>
+                <div class="menu-options-grid">
+                    <button class="game-button difficulty-btn selected" data-difficulty="easy">Easy</button>
+                    <button class="game-button difficulty-btn" data-difficulty="medium">Medium</button>
+                    <button class="game-button difficulty-btn" data-difficulty="hard">Hard</button>
+                 </div>
+            </div>
+             <div class="menu-section" id="theme-selector">
+                 <h2>Select Theme:</h2>
+                 <div class="menu-options-grid">
+                     </div>
+             </div>
+            <button id="start-game-btn" class="game-button">Start Game</button>
+        </div>
+
+        <div id="game-area">
+            <div id="sudoku-grid" class="sudoku-grid">
+                </div>
+            <div id="candidate-panel">
+                <h3>Candidates</h3>
+                <div class="candidate-buttons">
+                    </div>
+            </div>
+             <div id="game-controls-area">
+                <div class="game-controls-buttons">
+                    <button id="new-game-menu-btn" class="game-button">Menu</button>
+                    <button id="mode-toggle-btn" class="game-button selected">Mode: Candidates</button> <button id="check-solution-btn" class="game-button">Check</button>
+                </div>
+                <div id="message-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Game State ---
+        let currentPuzzle = [];
+        let solution = [];
+        let selectedDifficulty = 'easy';
+        let selectedTheme = 'arcade';
+        let selectedCellElement = null;
+        let cellCandidates = {};
+        let inputMode = 'candidates'; // Default mode
+
+        // --- DOM Elements ---
+        const bodyElement = document.body;
+        const mainMenuElement = document.getElementById('main-menu');
+        const gameAreaElement = document.getElementById('game-area');
+        const gridElement = document.getElementById('sudoku-grid');
+        const candidatePanelElement = document.getElementById('candidate-panel');
+        const candidateButtonsContainer = candidatePanelElement.querySelector('.candidate-buttons');
+        const newGameMenuBtn = document.getElementById('new-game-menu-btn');
+        const checkSolutionBtn = document.getElementById('check-solution-btn');
+        const modeToggleBtn = document.getElementById('mode-toggle-btn');
+        const messageBox = document.getElementById('message-box');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const themeSelectorContainer = document.getElementById('theme-selector').querySelector('.menu-options-grid');
+
+        // --- Puzzles ---
+        const puzzles = {
+             easy: { puzzle: [[5,3,0,0,7,0,0,0,0],[6,0,0,1,9,5,0,0,0],[0,9,8,0,0,0,0,6,0],[8,0,0,0,6,0,0,0,3],[4,0,0,8,0,3,0,0,1],[7,0,0,0,2,0,0,0,6],[0,6,0,0,0,0,2,8,0],[0,0,0,4,1,9,0,0,5],[0,0,0,0,8,0,0,7,9]], solution: [[5,3,4,6,7,8,9,1,2],[6,7,2,1,9,5,3,4,8],[1,9,8,3,4,2,5,6,7],[8,5,9,7,6,1,4,2,3],[4,2,6,8,5,3,7,9,1],[7,1,3,9,2,4,8,5,6],[9,6,1,5,3,7,2,8,4],[2,8,7,4,1,9,6,3,5],[3,4,5,2,8,6,1,7,9]] },
+             medium: { puzzle: [[0,0,0,2,6,0,7,0,1],[6,8,0,0,7,0,0,9,0],[1,9,0,0,0,4,5,0,0],[8,2,0,1,0,0,0,4,0],[0,0,4,6,0,2,9,0,0],[0,5,0,0,0,3,0,2,8],[0,0,9,3,0,0,0,7,4],[0,4,0,0,5,0,0,3,6],[7,0,3,0,1,8,0,0,0]], solution: [[4,3,5,2,6,9,7,8,1],[6,8,2,5,7,1,4,9,3],[1,9,7,8,3,4,5,6,2],[8,2,6,1,9,7,3,4,5],[3,7,4,6,8,2,9,1,5],[9,5,1,4,0,3,6,2,8],[5,1,9,3,2,6,8,7,4],[2,4,8,9,5,7,1,3,6],[7,6,3,0,1,8,2,5,9]] },
+             hard: { puzzle: [[0,0,1,0,0,0,0,0,3],[0,7,0,0,0,8,0,4,0],[5,0,0,2,0,0,0,0,0],[0,0,0,0,8,0,0,5,0],[0,0,6,0,0,0,1,0,0],[0,4,0,0,3,0,0,0,0],[0,0,0,0,0,1,0,0,6],[0,3,0,5,0,0,0,9,0],[9,0,0,0,0,0,4,0,0]], solution: [[4,8,1,6,5,4,9,2,3],[6,7,2,3,9,8,1,4,5],[5,9,3,2,1,7,6,8,4],[1,2,9,4,8,6,3,5,7],[3,5,6,7,2,9,1,0,8],[8,4,7,1,3,5,2,6,9],[2,0,4,9,0,1,8,0,6],[0,3,8,5,4,0,7,9,1],[9,1,5,8,7,0,4,0,2]] }
+        };
+
+         // --- Themes (Revised contrast logic) ---
+         const themes = {
+            // Added --theme-preview-text for better control, ensuring contrast on theme buttons
+            // Revised selected text/bg pairs for better contrast where needed
+            arcade: { name: 'Arcade', colors: { '--bg-color': '#1a1a2e', '--text-color': '#e0e0e0', '--primary-accent': '#00ffcc', '--secondary-accent': '#e43f5a', '--tertiary-accent': '#a0a0ff', '--grid-bg': '#4a4a8a', '--cell-bg': '#162447', '--cell-prefilled-bg': '#1f4068', '--cell-border': '#4a4a8a', '--cell-border-thick': '#6a6abf', '--highlight-related-bg': 'rgba(74, 74, 138, 0.6)', '--highlight-selected-bg': 'rgba(0, 255, 204, 0.3)', '--highlight-selected-outline': '#00ffcc', '--candidate-color': '#a0a0ff', '--input-color': '#00ffcc', '--button-bg': '#e43f5a', '--button-text': '#ffffff', '--button-shadow': '#a32d41', '--button-hover-bg': '#f55874', '--button-active-shadow': '#a32d41', '--button-selected-bg': '#00ffcc', '--button-selected-text': '#162447', '--button-selected-shadow': '#00b38f', '--button-start-bg': '#28a745', '--button-start-shadow': '#1c7430', '--button-start-hover-bg': '#34c759', '--button-start-active-shadow': '#1c7430', '--message-correct-bg': '#28a745', '--message-incorrect-bg': '#dc3545', '--message-text': '#ffffff' } },
+            forest: { name: 'Forest', colors: { '--bg-color': '#2f4f4f', '--text-color': '#f5f5dc', '--primary-accent': '#90ee90', '--secondary-accent': '#d2691e', '--tertiary-accent': '#b8860b', '--grid-bg': '#556b2f', '--cell-bg': '#6b8e23', '--cell-prefilled-bg': '#556b2f', '--cell-border': '#8fbc8f', '--cell-border-thick': '#2e8b57', '--highlight-related-bg': 'rgba(144, 238, 144, 0.3)', '--highlight-selected-bg': 'rgba(144, 238, 144, 0.4)', '--highlight-selected-outline': '#90ee90', '--candidate-color': '#f5f5dc', '--input-color': '#98fb98', '--button-bg': '#d2691e', '--button-text': '#ffffff', '--button-shadow': '#8b4513', '--button-hover-bg': '#cd853f', '--button-active-shadow': '#8b4513', '--button-selected-bg': '#90ee90', '--button-selected-text': '#2f4f4f', '--button-selected-shadow': '#5f9e5f', '--button-start-bg': '#2e8b57', '--button-start-shadow': '#1f603a', '--button-start-hover-bg': '#3cb371', '--button-start-active-shadow': '#1f603a', '--message-correct-bg': '#2e8b57', '--message-incorrect-bg': '#d2691e', '--message-text': '#ffffff' } },
+            ocean: { name: 'Ocean', colors: { '--bg-color': '#001f3f', '--text-color': '#f0f8ff', '--primary-accent': '#7fdbff', '--secondary-accent': '#ff851b', '--tertiary-accent': '#0074d9', '--grid-bg': '#0074d9', '--cell-bg': '#001f3f', '--cell-prefilled-bg': '#003366', '--cell-border': '#0074d9', '--cell-border-thick': '#7fdbff', '--highlight-related-bg': 'rgba(0, 116, 217, 0.4)', '--highlight-selected-bg': 'rgba(127, 219, 255, 0.3)', '--highlight-selected-outline': '#7fdbff', '--candidate-color': '#add8e6', '--input-color': '#7fdbff', '--button-bg': '#ff851b', '--button-text': '#ffffff', '--button-shadow': '#cc6a15', '--button-hover-bg': '#ffa04d', '--button-active-shadow': '#cc6a15', '--button-selected-bg': '#7fdbff', '--button-selected-text': '#001f3f', '--button-selected-shadow': '#4ac3ff', '--button-start-bg': '#2ecc40', '--button-start-shadow': '#249931', '--button-start-hover-bg': '#48d85a', '--button-start-active-shadow': '#249931', '--message-correct-bg': '#2ecc40', '--message-incorrect-bg': '#ff851b', '--message-text': '#ffffff' } },
+            sunset: { name: 'Sunset', colors: { '--bg-color': '#4d0026', '--text-color': '#fff0e6', '--primary-accent': '#ffcc66', '--secondary-accent': '#ff6666', '--tertiary-accent': '#ff9999', '--grid-bg': '#993333', '--cell-bg': '#800000', '--cell-prefilled-bg': '#660000', '--cell-border': '#cc6666', '--cell-border-thick': '#ff9966', '--highlight-related-bg': 'rgba(255, 153, 102, 0.4)', '--highlight-selected-bg': 'rgba(255, 204, 102, 0.4)', '--highlight-selected-outline': '#ffcc66', '--candidate-color': '#ffddb3', '--input-color': '#ffcc66', '--button-bg': '#ff6666', '--button-text': '#ffffff', '--button-shadow': '#cc3333', '--button-hover-bg': '#ff8080', '--button-active-shadow': '#cc3333', '--button-selected-bg': '#ffcc66', '--button-selected-text': '#4d0026', '--button-selected-shadow': '#ffbb33', '--button-start-bg': '#ff9900', '--button-start-shadow': '#cc7a00', '--button-start-hover-bg': '#ffad33', '--button-start-active-shadow': '#cc7a00', '--message-correct-bg': '#ff9900', '--message-incorrect-bg': '#ff6666', '--message-text': '#ffffff' } }, // Changed message text color
+            mono: { name: 'Mono', colors: { '--bg-color': '#f5f5f5', '--text-color': '#333333', '--primary-accent': '#555555', '--secondary-accent': '#999999', '--tertiary-accent': '#777777', '--grid-bg': '#cccccc', '--cell-bg': '#ffffff', '--cell-prefilled-bg': '#eeeeee', '--cell-border': '#dddddd', '--cell-border-thick': '#bbbbbb', '--highlight-related-bg': 'rgba(204, 204, 204, 0.5)', '--highlight-selected-bg': 'rgba(187, 187, 187, 0.4)', '--highlight-selected-outline': '#555555', '--candidate-color': '#888888', '--input-color': '#333333', '--button-bg': '#777777', '--button-text': '#ffffff', '--button-shadow': '#555555', '--button-hover-bg': '#888888', '--button-active-shadow': '#555555', '--button-selected-bg': '#555555', '--button-selected-text': '#ffffff', '--button-selected-shadow': '#333333', '--button-start-bg': '#555555', '--button-start-shadow': '#333333', '--button-start-hover-bg': '#666666', '--button-start-active-shadow': '#333333', '--message-correct-bg': '#555555', '--message-incorrect-bg': '#999999', '--message-text': '#ffffff' } },
+            desert: { name: 'Desert', colors: { '--bg-color': '#f4a460', '--text-color': '#5d4037', '--primary-accent': '#8b4513', '--secondary-accent': '#cd853f', '--tertiary-accent': '#a0522d', '--grid-bg': '#a0522d', '--cell-bg': '#deb887', '--cell-prefilled-bg': '#d2b48c', '--cell-border': '#cd853f', '--cell-border-thick': '#8b4513', '--highlight-related-bg': 'rgba(160, 82, 45, 0.3)', '--highlight-selected-bg': 'rgba(205, 133, 63, 0.4)', '--highlight-selected-outline': '#8b4513', '--candidate-color': '#a0522d', '--input-color': '#8b4513', '--button-bg': '#cd853f', '--button-text': '#ffffff', '--button-shadow': '#8b4513', '--button-hover-bg': '#d89a5f', '--button-active-shadow': '#8b4513', '--button-selected-bg': '#8b4513', '--button-selected-text': '#ffffff', '--button-selected-shadow': '#5d300c', '--button-start-bg': '#8b4513', '--button-start-shadow': '#5d300c', '--button-start-hover-bg': '#a05a2c', '--button-start-active-shadow': '#5d300c', '--message-correct-bg': '#8b4513', '--message-incorrect-bg': '#cd853f', '--message-text': '#ffffff' } },
+            space: { name: 'Space', colors: { '--bg-color': '#0c0c1c', '--text-color': '#e0e0ff', '--primary-accent': '#ffccff', '--secondary-accent': '#ff66cc', '--tertiary-accent': '#cc99ff', '--grid-bg': '#4c2a4c', '--cell-bg': '#2c1a3c', '--cell-prefilled-bg': '#3c2a4c', '--cell-border': '#6c4a6c', '--cell-border-thick': '#8c6a8c', '--highlight-related-bg': 'rgba(108, 74, 108, 0.5)', '--highlight-selected-bg': 'rgba(204, 153, 255, 0.3)', '--highlight-selected-outline': '#cc99ff', '--candidate-color': '#ddbbff', '--input-color': '#ffccff', '--button-bg': '#ff66cc', '--button-text': '#0c0c1c', '--button-shadow': '#cc3399', '--button-hover-bg': '#ff80d5', '--button-active-shadow': '#cc3399', '--button-selected-bg': '#ffccff', '--button-selected-text': '#2c1a3c', '--button-selected-shadow': '#ff99ff', '--button-start-bg': '#9966ff', '--button-start-shadow': '#7744dd', '--button-start-hover-bg': '#ad85ff', '--button-start-active-shadow': '#7744dd', '--message-correct-bg': '#9966ff', '--message-incorrect-bg': '#ff66cc', '--message-text': '#ffffff' } }, // Changed message text color
+            candy: { name: 'Candy', colors: { '--bg-color': '#fff0f5', '--text-color': '#6a0dad', '--primary-accent': '#ff69b4', '--secondary-accent': '#add8e6', '--tertiary-accent': '#dda0dd', '--grid-bg': '#ffb6c1', '--cell-bg': '#ffffff', '--cell-prefilled-bg': '#ffe4e1', '--cell-border': '#ffc0cb', '--cell-border-thick': '#ff69b4', '--highlight-related-bg': 'rgba(255, 182, 193, 0.5)', '--highlight-selected-bg': 'rgba(173, 216, 230, 0.4)', '--highlight-selected-outline': '#add8e6', '--candidate-color': '#dda0dd', '--input-color': '#ff1493', '--button-bg': '#add8e6', '--button-text': '#6a0dad', '--button-shadow': '#87ceeb', '--button-hover-bg': '#b0e0e6', '--button-active-shadow': '#87ceeb', '--button-selected-bg': '#ff69b4', '--button-selected-text': '#ffffff', '--button-selected-shadow': '#db7093', '--button-start-bg': '#ff69b4', '--button-start-shadow': '#db7093', '--button-start-hover-bg': '#ff85c1', '--button-start-active-shadow': '#db7093', '--message-correct-bg': '#ff69b4', '--message-incorrect-bg': '#add8e6', '--message-text': '#ffffff' } }, // Adjusted selected text
+            matrix: { name: 'Matrix', colors: { '--bg-color': '#000000', '--text-color': '#00ff00', '--primary-accent': '#33ff33', '--secondary-accent': '#66ff66', '--tertiary-accent': '#99ff99', '--grid-bg': '#003300', '--cell-bg': '#001a00', '--cell-prefilled-bg': '#002a00', '--cell-border': '#004d00', '--cell-border-thick': '#006600', '--highlight-related-bg': 'rgba(0, 102, 0, 0.5)', '--highlight-selected-bg': 'rgba(51, 255, 51, 0.2)', '--highlight-selected-outline': '#33ff33', '--candidate-color': '#66ff66', '--input-color': '#00ff00', '--button-bg': '#006600', '--button-text': '#00ff00', '--button-shadow': '#003300', '--button-hover-bg': '#008000', '--button-active-shadow': '#003300', '--button-selected-bg': '#33ff33', '--button-selected-text': '#000000', '--button-selected-shadow': '#00cc00', '--button-start-bg': '#009900', '--button-start-shadow': '#004d00', '--button-start-hover-bg': '#00b300', '--button-start-active-shadow': '#004d00', '--message-correct-bg': '#009900', '--message-incorrect-bg': '#006600', '--message-text': '#00ff00' } },
+            solarized: { name: 'Solarized', colors: { '--bg-color': '#002b36', '--text-color': '#839496', '--primary-accent': '#268bd2', '--secondary-accent': '#dc322f', '--tertiary-accent': '#b58900', '--grid-bg': '#586e75', '--cell-bg': '#073642', '--cell-prefilled-bg': '#002b36', '--cell-border': '#586e75', '--cell-border-thick': '#657b83', '--highlight-related-bg': 'rgba(88, 110, 117, 0.4)', '--highlight-selected-bg': 'rgba(38, 139, 210, 0.2)', '--highlight-selected-outline': '#268bd2', '--candidate-color': '#93a1a1', '--input-color': '#2aa198', '--button-bg': '#cb4b16', '--button-text': '#fdf6e3', '--button-shadow': '#a53c10', '--button-hover-bg': '#d36237', '--button-active-shadow': '#a53c10', '--button-selected-bg': '#268bd2', '--button-selected-text': '#fdf6e3', '--button-selected-shadow': '#1e6a9e', '--button-start-bg': '#859900', '--button-start-shadow': '#677600', '--button-start-hover-bg': '#9cae00', '--button-start-active-shadow': '#677600', '--message-correct-bg': '#859900', '--message-incorrect-bg': '#dc322f', '--message-text': '#fdf6e3' } }, // Adjusted selected text color
+         };
+
+
+        // --- Functions ---
+
+        /** Applies the selected theme */
+        function applyTheme(themeName) {
+            const theme = themes[themeName];
+            if (!theme) return;
+            selectedTheme = themeName;
+            // Apply all theme colors to body
+            for (const [key, value] of Object.entries(theme.colors)) {
+                bodyElement.style.setProperty(key, value);
+            }
+            // Update theme button styles specifically for preview
+            document.querySelectorAll('#theme-selector .theme-button').forEach(btn => {
+                const isSelected = btn.dataset.theme === themeName;
+                btn.classList.toggle('selected', isSelected);
+                // Apply base button styles from the *newly selected* theme
+                // This ensures the button text/bg contrast is correct according to the theme
+                btn.style.backgroundColor = theme.colors['--button-bg'];
+                btn.style.color = theme.colors['--button-text'];
+                btn.style.borderColor = isSelected ? theme.colors['--primary-accent'] : 'transparent'; // Highlight border only if selected
+            });
+            console.log(`Applied theme: ${theme.name}`);
+        }
+
+        /** Populates the theme selector buttons */
+        function populateThemeSelector() {
+            themeSelectorContainer.innerHTML = '';
+            const defaultTheme = themes[selectedTheme] || themes.arcade; // Fallback theme
+            for (const [key, theme] of Object.entries(themes)) {
+                const button = document.createElement('button');
+                // Apply the *default* theme's button styles initially
+                button.classList.add('game-button', 'theme-button');
+                button.style.backgroundColor = defaultTheme.colors['--button-bg'];
+                button.style.color = defaultTheme.colors['--button-text'];
+                button.dataset.theme = key;
+                button.textContent = theme.name;
+                button.addEventListener('click', () => applyTheme(key));
+                themeSelectorContainer.appendChild(button);
+            }
+            // Mark the initially selected theme button
+            const initialSelectedButton = themeSelectorContainer.querySelector(`[data-theme="${selectedTheme}"]`);
+            if (initialSelectedButton) {
+                initialSelectedButton.classList.add('selected');
+                initialSelectedButton.style.borderColor = defaultTheme.colors['--primary-accent'];
+            }
+        }
+
+
+        /** Shows the main menu */
+        function showMainMenu() {
+            gameAreaElement.style.display = 'none';
+            mainMenuElement.style.display = 'flex';
+            clearHighlights();
+            hideCandidatePanel();
+            clearMessage();
+            // Re-apply theme and update button states in menu
+            applyTheme(selectedTheme);
+            // Update difficulty button selection
+            difficultyButtons.forEach(btn => btn.classList.toggle('selected', btn.dataset.difficulty === selectedDifficulty));
+        }
+
+        /** Shows the game area */
+        function showGameArea() {
+            mainMenuElement.style.display = 'none';
+            gameAreaElement.style.display = 'flex';
+            setInputMode('candidates'); // Reset to candidates mode
+        }
+
+        /** Initializes a new game */
+        function initGame() {
+            console.log("Initializing game with difficulty:", selectedDifficulty);
+            const puzzleData = puzzles[selectedDifficulty] || puzzles.easy;
+            currentPuzzle = JSON.parse(JSON.stringify(puzzleData.puzzle));
+            solution = JSON.parse(JSON.stringify(puzzleData.solution));
+            cellCandidates = {};
+
+            renderGrid();
+            clearMessage();
+            clearHighlights();
+            hideCandidatePanel();
+            showGameArea();
+            applyTheme(selectedTheme); // Apply theme to game elements
+        }
+
+        /** Renders the Sudoku grid */
+        function renderGrid() {
+            gridElement.innerHTML = '';
+            selectedCellElement = null;
+
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('sudoku-cell');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    const cellId = `r${r}c${c}`;
+                    const value = currentPuzzle[r][c];
+
+                    // Candidate Grid
+                    const candidateGridDiv = document.createElement('div');
+                    candidateGridDiv.classList.add('candidate-grid');
+                    for (let i = 1; i <= 9; i++) {
+                        const candSpan = document.createElement('span');
+                        candSpan.textContent = i;
+                        candSpan.dataset.candidate = i;
+                        candidateGridDiv.appendChild(candSpan);
+                    }
+                    cell.appendChild(candidateGridDiv);
+
+                    if (value !== 0) {
+                        // Pre-filled cell
+                        const span = document.createElement('span');
+                        span.textContent = value;
+                        cell.appendChild(span);
+                        cell.classList.add('pre-filled');
+                    } else {
+                        // Empty cell
+                        const input = document.createElement('input');
+                        input.type = 'text'; // Use text for better control over input behavior
+                        input.inputMode = 'numeric'; // Hint for numeric keyboard
+                        input.pattern = "[1-9]"; // Basic pattern validation
+                        input.maxLength = 1; // Only allow single digit
+                        input.dataset.row = r;
+                        input.dataset.col = c;
+                        input.autocomplete = "off";
+                        // REMOVED input event listener here, logic moved to keydown
+                        input.addEventListener('keydown', handleKeyDown);
+                        input.addEventListener('focus', handleFocus);
+                        cell.appendChild(input);
+                        updateCellCandidateDisplay(cellId, cell);
+                    }
+                    cell.addEventListener('click', handleCellClick);
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        /** Handles focus event on input cells */
+        function handleFocus(event) {
+            const inputElement = event.target;
+            const cell = inputElement.closest('.sudoku-cell');
+            // Ensure cell click logic runs if focus shifts to a new cell
+            if (selectedCellElement !== cell) {
+                 handleCellClick({ target: cell });
+            }
+        }
+
+        /** Handles keydown events in input cells */
+        function handleKeyDown(event) {
+            const inputElement = event.target;
+            const cell = inputElement.closest('.sudoku-cell');
+            if (!cell || cell.classList.contains('pre-filled')) return;
+
+            const cellId = `r${parseInt(cell.dataset.row)}c${parseInt(cell.dataset.col)}`;
+            const key = event.key;
+
+            // Handle navigation and deletion keys first
+            if (key === 'Enter') {
+                event.preventDefault();
+                focusNextInput(inputElement);
+                return; // Stop processing here
+            } else if (key === 'Backspace' || key === 'Delete') {
+                // If input is already empty, clear candidates. Otherwise, allow default backspace.
+                if (inputElement.value === '' && cellCandidates[cellId]?.length > 0) {
+                    delete cellCandidates[cellId];
+                    updateCellCandidateDisplay(cellId, cell);
+                    event.preventDefault(); // Prevent default action if we cleared candidates
+                }
+                // Allow default backspace/delete if input is not empty
+                return;
+            }
+
+            // Handle number input (1-9) based on mode
+            if (/^[1-9]$/.test(key)) {
+                event.preventDefault(); // Prevent default input action for numbers
+                const num = parseInt(key);
+
+                if (inputMode === 'candidates') {
+                    // --- Candidate Mode: Toggle candidate ---
+                    console.log(`Candidate Mode (Key): Toggling candidate ${num} for cell ${cellId}`);
+                    if (inputElement.value !== '') { inputElement.value = ''; } // Clear final answer if present
+
+                    let currentCandidates = cellCandidates[cellId] || [];
+                    const candidateIndex = currentCandidates.indexOf(num);
+
+                    if (candidateIndex > -1) {
+                        currentCandidates.splice(candidateIndex, 1); // Remove
+                    } else {
+                        currentCandidates.push(num); // Add
+                        currentCandidates.sort((a, b) => a - b);
+                    }
+
+                    if (currentCandidates.length > 0) { cellCandidates[cellId] = currentCandidates; }
+                    else { delete cellCandidates[cellId]; }
+
+                    updateCellCandidateDisplay(cellId, cell);
+                    // Update side panel button if visible
+                    const sideButton = candidateButtonsContainer.querySelector(`button[data-number="${num}"]`);
+                    if (sideButton) {
+                        sideButton.classList.toggle('selected-candidate', candidateIndex === -1);
+                    }
+
+                } else {
+                    // --- Answer Mode: Set final answer ---
+                    console.log(`Answer Mode (Key): Setting value ${num} for cell ${cellId}`);
+                    inputElement.value = num.toString(); // Set the input value
+                    // Clear candidates associated with this cell
+                    if (cellCandidates[cellId]) {
+                        delete cellCandidates[cellId];
+                        updateCellCandidateDisplay(cellId, cell);
+                    }
+                    cell.classList.remove('has-candidates'); // Ensure input is visible
+                }
+                clearMessage();
+            }
+            // Ignore other keys (allow arrow keys, etc.)
+        }
+
+
+        /** Moves focus to the next available input cell */
+        function focusNextInput(currentInput) {
+            const allInputs = Array.from(gridElement.querySelectorAll('input'));
+            const currentIndex = allInputs.indexOf(currentInput);
+            if (currentIndex > -1) {
+                let nextIndex = (currentIndex + 1) % allInputs.length;
+                while (allInputs[nextIndex].closest('.sudoku-cell').classList.contains('pre-filled')) {
+                    nextIndex = (nextIndex + 1) % allInputs.length;
+                    if (nextIndex === currentIndex) break;
+                }
+                allInputs[nextIndex].focus();
+            }
+        }
+
+        /** Handles clicks on any cell */
+        function handleCellClick(event) {
+            let clickedCell = event.target.closest('.sudoku-cell');
+            if (!clickedCell) return;
+
+            const isPrefilled = clickedCell.classList.contains('pre-filled');
+
+            if (selectedCellElement !== clickedCell) {
+                 clearHighlights();
+                 const row = parseInt(clickedCell.dataset.row);
+                 const col = parseInt(clickedCell.dataset.col);
+                 highlightRelatedCells(row, col);
+                 clickedCell.classList.add('selected-cell');
+                 selectedCellElement = clickedCell;
+
+                 if (!isPrefilled) {
+                     showCandidatePanel(row, col);
+                 } else {
+                     hideCandidatePanel();
+                 }
+            }
+
+             const input = clickedCell.querySelector('input');
+             if (input && !isPrefilled && document.activeElement !== input) {
+                  setTimeout(() => input.focus(), 0);
+             }
+        }
+
+        /** Clears all cell highlights */
+        function clearHighlights() {
+            gridElement.querySelectorAll('.sudoku-cell.selected-cell, .sudoku-cell.highlight-related').forEach(cell => {
+                cell.classList.remove('selected-cell', 'highlight-related');
+            });
+            selectedCellElement = null;
+        }
+
+        /** Highlights related row, column, and block */
+        function highlightRelatedCells(row, col) {
+            const startRow = Math.floor(row / 3) * 3;
+            const startCol = Math.floor(col / 3) * 3;
+
+            gridElement.querySelectorAll('.sudoku-cell').forEach(cell => {
+                const r = parseInt(cell.dataset.row);
+                const c = parseInt(cell.dataset.col);
+                const inRow = r === row;
+                const inCol = c === col;
+                const inBlock = r >= startRow && r < startRow + 3 && c >= startCol && c < startCol + 3;
+
+                if (inRow || inCol || inBlock) {
+                    cell.classList.add('highlight-related');
+                }
+            });
+        }
+
+        /** Shows and updates the candidate input panel */
+        function showCandidatePanel(row, col) {
+            const cellId = `r${row}c${col}`;
+            const candidates = cellCandidates[cellId] || [];
+
+            candidatePanelElement.style.display = 'flex';
+            candidateButtonsContainer.querySelectorAll('button').forEach(button => {
+                const num = parseInt(button.dataset.number);
+                button.classList.toggle('selected-candidate', candidates.includes(num));
+            });
+        }
+
+        /** Hides the candidate input panel */
+        function hideCandidatePanel() {
+            candidatePanelElement.style.display = 'none';
+        }
+
+        /** Toggles the input mode */
+        function toggleInputMode() {
+            setInputMode(inputMode === 'candidates' ? 'answer' : 'candidates');
+        }
+
+        /** Sets the input mode and updates the button */
+        function setInputMode(mode) {
+            inputMode = mode;
+            console.log("Setting input mode to:", mode); // Debug log
+            if (mode === 'candidates') {
+                modeToggleBtn.textContent = 'Mode: Candidates';
+                modeToggleBtn.classList.add('selected');
+            } else {
+                modeToggleBtn.textContent = 'Mode: Answer';
+                modeToggleBtn.classList.remove('selected');
+            }
+        }
+
+
+        /** Handles clicks on the candidate number buttons (1-9) */
+        function handleCandidateButtonClick(event) {
+            console.log(`Button clicked. Current mode: ${inputMode}`); // Debug log
+            if (!selectedCellElement || selectedCellElement.classList.contains('pre-filled')) {
+                console.log("No cell selected or cell is pre-filled."); // Debug log
+                return;
+            }
+            const button = event.target;
+            const num = parseInt(button.dataset.number);
+            const cellId = `r${selectedCellElement.dataset.row}c${selectedCellElement.dataset.col}`;
+            const input = selectedCellElement.querySelector('input');
+
+            if (inputMode === 'candidates') {
+                console.log(`Candidate Mode (Button): Toggling candidate ${num} for cell ${cellId}`); // Debug log
+                // --- Candidate Mode ---
+                if (input && input.value !== '') { input.value = ''; } // Clear final answer if present
+
+                let currentCandidates = cellCandidates[cellId] || [];
+                const candidateIndex = currentCandidates.indexOf(num);
+
+                if (candidateIndex > -1) {
+                    currentCandidates.splice(candidateIndex, 1);
+                } else {
+                    currentCandidates.push(num);
+                    currentCandidates.sort((a, b) => a - b);
+                }
+
+                if (currentCandidates.length > 0) { cellCandidates[cellId] = currentCandidates; }
+                else { delete cellCandidates[cellId]; }
+
+                updateCellCandidateDisplay(cellId, selectedCellElement);
+                button.classList.toggle('selected-candidate', candidateIndex === -1);
+
+            } else { // inputMode === 'answer'
+                console.log(`Answer Mode (Button): Setting value ${num} for cell ${cellId}`); // Debug log
+                // --- Answer Mode ---
+                if (input) {
+                    input.value = num.toString(); // Set input value
+                    // Clear candidates associated with this cell
+                    if (cellCandidates[cellId]) {
+                        delete cellCandidates[cellId];
+                        updateCellCandidateDisplay(cellId, selectedCellElement);
+                    }
+                    cell.classList.remove('has-candidates'); // Ensure input is visible
+                }
+            }
+            clearMessage();
+        }
+
+
+        /** Updates the visual candidate display in a cell */
+        function updateCellCandidateDisplay(cellId, cellElement) {
+            const candidates = cellCandidates[cellId] || [];
+            const candidateGridDiv = cellElement.querySelector('.candidate-grid');
+            let hasAnyCandidates = false;
+
+            if (candidateGridDiv) {
+                candidateGridDiv.querySelectorAll('span').forEach(span => {
+                    const num = parseInt(span.dataset.candidate);
+                    const isVisible = candidates.includes(num);
+                    span.classList.toggle('visible', isVisible);
+                    if (isVisible) hasAnyCandidates = true;
+                });
+            }
+             cellElement.classList.toggle('has-candidates', hasAnyCandidates);
+        }
+
+
+        /** Checks the user's solution */
+        function checkSolution() {
+            let isCorrect = true;
+            let isComplete = true;
+
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const cell = gridElement.querySelector(`.sudoku-cell[data-row="${r}"][data-col="${c}"]`);
+                    let userValue = 0;
+
+                    if (cell.classList.contains('pre-filled')) {
+                        userValue = currentPuzzle[r][c];
+                    } else {
+                        const input = cell.querySelector('input');
+                        if (!cell.classList.contains('has-candidates') && input && /^[1-9]$/.test(input.value)) {
+                             userValue = parseInt(input.value);
+                        } else {
+                            isComplete = false;
+                        }
+                    }
+
+                    if (userValue !== 0 && userValue !== solution[r][c]) {
+                        isCorrect = false;
+                    }
+                }
+            }
+
+            if (!isComplete) {
+                 displayMessage("Board is not complete or contains candidates!", "incorrect");
+            } else if (isCorrect) {
+                displayMessage("Congratulations! Correct!", "correct");
+                 clearHighlights();
+                 hideCandidatePanel();
+            } else {
+                displayMessage("Something is incorrect. Keep trying!", "incorrect");
+            }
+        }
+
+        /** Displays a message */
+        function displayMessage(text, type) {
+            messageBox.textContent = text;
+            messageBox.className = 'message-box';
+            messageBox.classList.add(`message-${type}`);
+            messageBox.style.opacity = '1';
+        }
+
+        /** Clears the message */
+        function clearMessage() {
+             messageBox.textContent = '';
+             messageBox.className = 'message-box';
+             messageBox.style.opacity = '0';
+        }
+
+        // --- Initial Setup & Event Listeners ---
+        function setup() {
+            populateThemeSelector();
+            // Populate Candidate Buttons
+            candidateButtonsContainer.innerHTML = '';
+            for (let i = 1; i <= 9; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.dataset.number = i;
+                button.addEventListener('click', handleCandidateButtonClick);
+                candidateButtonsContainer.appendChild(button);
+            }
+            // Menu Buttons Listeners
+            difficultyButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    difficultyButtons.forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                    selectedDifficulty = button.dataset.difficulty;
+                });
+            });
+            startGameBtn.addEventListener('click', initGame);
+            // Game Buttons Listeners
+            newGameMenuBtn.addEventListener('click', showMainMenu);
+            checkSolutionBtn.addEventListener('click', checkSolution);
+            modeToggleBtn.addEventListener('click', toggleInputMode);
+            // Apply default theme and show menu
+            applyTheme(selectedTheme);
+            showMainMenu();
+        }
+
+        // --- Run Setup ---
+        window.onload = setup;
+
+    </script>
+
+</body>
+</html>
