@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Silly-Face Super Deluxe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        /* --- Base Styles --- */
+        :root {
+            /* Default Theme Colors (CSS Variables) */
+            --bg-primary: #f0f9ff;
+            --bg-container: #ffffff;
+            --text-primary: #1e3a8a;
+            --text-secondary: #3b82f6;
+            --border-color: #60a5fa;
+            --cell-bg: #e0f2fe;
+            --cell-hover-bg: #bae6fd;
+            --button-bg: #3b82f6;
+            --button-hover-bg: #2563eb;
+            --button-text: white;
+            --button-disabled-bg: #9ca3af;
+            --leaderboard-bg: #e0f2fe;
+            --leaderboard-text: #1e40af;
+            --input-bg: #ffffff; 
+            --input-text: #1e3a8a; 
+            --input-border: var(--border-color);
+            --xp-color: #f59e0b;
+            --reward-unlocked-bg: #dcfce7; 
+            --reward-locked-bg: #f3f4f6;   
+            --reward-claimable-bg: #fef9c3; /* Light yellow for claimable */
+            --title-color1: #3b82f6;
+            --title-color2: #ef4444;
+            --title-color3: #f59e0b;
+            --music-select-button-bg: var(--button-bg);
+            --music-select-button-text: var(--button-text);
+            --music-select-button-hover-bg: var(--button-hover-bg);
+            --music-select-button-selected-bg: var(--button-hover-bg);
+            --music-select-button-selected-shadow: var(--text-secondary);
+
+        }
+
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            transition: background-color 0.5s ease;
+        }
+
+        .game-container {
+            background-color: var(--bg-container);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 95%;
+            max-width: 650px; 
+            transition: background-color 0.5s ease;
+            position: relative;
+            min-height: 550px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; 
+        }
+
+        /* --- Screen Management --- */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; 
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            background-color: var(--bg-container);
+            border-radius: 1rem;
+            overflow-y: auto; 
+        }
+        .screen.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+        }
+        #screen-menu, #screen-game, #screen-music { 
+             justify-content: space-around; 
+        }
+        #screen-rewards, #screen-stats, #screen-themes { 
+            justify-content: flex-start; 
+        }
+
+
+        /* --- Animated Title --- */
+        .animated-title span {
+            display: inline-block;
+            animation: colorCycle 5s infinite, bounceTitle 1.5s infinite alternate ease-in-out;
+        }
+        @keyframes colorCycle {
+            0%, 100% { color: var(--title-color1); }
+            33% { color: var(--title-color2); }
+            66% { color: var(--title-color3); }
+        }
+        @keyframes bounceTitle {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-3px); }
+        }
+
+
+        /* --- Game Grid --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem; 
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            width: 100%;
+            max-width: 280px; 
+            height: 230px;
+            border: 4px dashed var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.8rem;
+            box-sizing: border-box;
+            transition: border-color 0.5s ease;
+        }
+        .cell {
+            background-color: var(--cell-bg);
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.2rem; 
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+        .cell:hover {
+            background-color: var(--cell-hover-bg);
+        }
+        .face {
+            position: absolute;
+            opacity: 0;
+            transform: scale(0.5) rotate(-15deg);
+            transition: opacity 0.1s ease-out, transform 0.1s ease-out; 
+            pointer-events: none;
+            line-height: 1;
+        }
+        .face.active {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+            pointer-events: auto;
+            animation: bounce 0.25s ease-out; 
+        }
+        .face.bonus, .face.xpboost { filter: drop-shadow(0 0 6px gold); }
+        .face.penalty { animation: shake-subtle 0.4s infinite alternate; }
+        .face.frenzy { filter: drop-shadow(0 0 5px orangered); animation: pulse-frenzy 0.5s infinite alternate; }
+        .face.slowmo { filter: drop-shadow(0 0 5px deepskyblue); opacity: 0.8; }
+        .face.timefreeze { filter: drop-shadow(0 0 6px cyan); animation: pulse-freeze 0.7s infinite alternate; }
+
+
+        /* --- Animations --- */
+        @keyframes bounce { 0% { transform: scale(0.7); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        @keyframes shake-subtle { from { transform: translateX(-2px) rotate(-2deg); } to { transform: translateX(2px) rotate(2deg); } }
+        @keyframes hit-flash-good { from { background-color: #a7f3d0; transform: scale(1.05); } to { background-color: var(--cell-bg); transform: scale(1); } }
+        @keyframes hit-flash-bonus { from { background-color: #fef08a; transform: scale(1.1); } to { background-color: var(--cell-bg); transform: scale(1); } }
+        @keyframes hit-flash-penalty { from { background-color: #fecaca; transform: scale(0.95); } to { background-color: var(--cell-bg); transform: scale(1); } }
+        @keyframes miss-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes pulse-frenzy { from { transform: scale(1); } to { transform: scale(1.1); } }
+        @keyframes pulse-freeze { from { opacity: 0.7; } to { opacity: 1; } }
+
+
+        /* --- UI Elements --- */
+        .game-button, .menu-button, .theme-button, .difficulty-button, .sound-toggle-button, .music-select-button,
+        .claim-reward-button, .unlock-theme-button { 
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+            margin: 0.25rem;
+            display: inline-block;
+            text-transform: uppercase;
+        }
+        .game-button:hover, .menu-button:hover, .theme-button:hover, .difficulty-button:hover, .sound-toggle-button:hover, .music-select-button:hover,
+        .claim-reward-button:hover, .unlock-theme-button:hover {
+            background-color: var(--button-hover-bg);
+            transform: translateY(-1px);
+        }
+        .game-button:active, .menu-button:active, .theme-button:active, .difficulty-button:active, .sound-toggle-button:active, .music-select-button:active,
+        .claim-reward-button:active, .unlock-theme-button:active {
+            transform: scale(0.96);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        .game-button:disabled, .menu-button:disabled, .theme-button:disabled, .difficulty-button:disabled, .sound-toggle-button:disabled, .music-select-button:disabled,
+        .claim-reward-button:disabled, .unlock-theme-button:disabled { 
+            background-color: var(--button-disabled-bg);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+            opacity: 0.7;
+        }
+        .difficulty-button.selected, .theme-button.selected {
+             box-shadow: 0 0 0 3px var(--text-secondary);
+             background-color: var(--button-hover-bg);
+        }
+         .theme-button.locked:not(.unlock-theme-button) { 
+             background-color: var(--button-disabled-bg);
+             color: #374151 !important; 
+             cursor: not-allowed;
+             opacity: 0.7; 
+         }
+        .music-select-button {
+            background-color: var(--music-select-button-bg);
+            color: var(--music-select-button-text);
+            width: 80%; max-width: 300px; margin-bottom: 0.5rem;
+        }
+        .music-select-button:hover {
+            background-color: var(--music-select-button-hover-bg);
+        }
+        .music-select-button.selected {
+            background-color: var(--music-select-button-selected-bg);
+            box-shadow: 0 0 0 3px var(--music-select-button-selected-shadow);
+            font-weight: bold;
+        }
+        .claim-reward-button, .unlock-theme-button { 
+            padding: 0.3rem 0.6rem;
+            font-size: 0.7rem;
+            background-color: #fbbf24; 
+            color: #422006; 
+        }
+        .claim-reward-button:hover, .unlock-theme-button:hover {
+            background-color: #f59e0b;
+        }
+
+
+        .stats, .xp-display {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+        }
+        .xp-display span { color: var(--xp-color); font-weight: bold; }
+        #message-box, #game-over-message {
+            margin-top: 0.4rem;
+            font-size: 0.85rem;
+            font-weight: bold;
+            min-height: 1.4rem;
+            color: var(--text-secondary);
+        }
+        #game-over-input { margin-top: 0.8rem; }
+        #name-input {
+            font-family: 'Press Start 2P', cursive;
+            padding: 0.5rem;
+            border: 2px solid var(--input-border);
+            background-color: var(--input-bg); 
+            color: var(--input-text); 
+            border-radius: 0.3rem;
+            text-align: center;
+            width: 80px;
+            text-transform: uppercase;
+            margin-right: 0.5rem;
+            font-size: 1rem;
+        }
+        #name-input::placeholder { color: var(--text-secondary); opacity: 0.7; }
+
+
+        /* --- Leaderboard, Rewards, Stats --- */
+        #leaderboard-list, .rewards-track, .stats-list, #music-selection-container, #theme-selection { 
+            list-style: none;
+            padding: 0;
+            margin-top: 1rem;
+            width: 90%;
+            max-width: 450px;
+            background-color: var(--leaderboard-bg); 
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: var(--leaderboard-text);
+            font-size: 0.85rem;
+            max-height: 300px; 
+            overflow-y: auto;
+        }
+        #theme-selection { 
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+            gap: 0.5rem;
+        }
+        #theme-selection .theme-button-container { 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+        }
+
+
+        #leaderboard-list li, .rewards-track li, .stats-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.3rem;
+            border-bottom: 1px dashed var(--border-color);
+        }
+         #leaderboard-list li:last-child, .rewards-track li:last-child, .stats-list li:last-child {
+             border-bottom: none;
+         }
+        #leaderboard-list .score, .stats-list .stat-value { font-weight: bold; }
+
+        .rewards-track .reward-item { 
+             background-color: var(--reward-locked-bg);
+             opacity: 0.8;
+        }
+        .rewards-track .reward-item.unlocked { background-color: var(--reward-unlocked-bg); color: green; opacity: 1;}
+        .rewards-track .reward-item.claimable { background-color: var(--reward-claimable-bg); opacity: 1;}
+        .rewards-track .reward-name { flex-grow: 1; text-align: left; }
+        .rewards-track .reward-status { font-size: 0.75rem; min-width: 80px; text-align: right; }
+
+
+        /* --- Themes --- */
+        body.theme-dark {
+            --bg-primary: #1f2937; --bg-container: #374151; --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af; --border-color: #6b7280; --cell-bg: #4b5563;
+            --cell-hover-bg: #6b7280; --button-bg: #60a5fa; --button-hover-bg: #3b82f6;
+            --button-text: #1f2937; --leaderboard-bg: #4b5563; --leaderboard-text: #d1d5db;
+            --input-bg: #374151; --input-text: #f3f4f6; --input-border: #6b7280; 
+            --title-color1: #60a5fa; --title-color2: #f87171; --title-color3: #fbbf24;
+            --music-select-button-bg: #4b5563; --music-select-button-text: #d1d5db;
+            --music-select-button-hover-bg: #6b7280; --music-select-button-selected-bg: #60a5fa;
+            --music-select-button-selected-shadow: #f3f4f6;
+        }
+        body.theme-forest {
+            --bg-primary: #e2f0d9; --bg-container: #ffffff; --text-primary: #3a5f0b;
+            --text-secondary: #6b8e23; --border-color: #90ee90; --cell-bg: #c1e1c1;
+            --cell-hover-bg: #a1d1a1; --button-bg: #8fbc8f; --button-hover-bg: #6b8e23;
+            --button-text: white; --leaderboard-bg: #d1e7d1; --leaderboard-text: #2e4d07;
+            --input-bg: #f0fff0; --input-text: #3a5f0b; --input-border: #90ee90;
+            --title-color1: #6b8e23; --title-color2: #ff7f50; --title-color3: #d2691e;
+            --music-select-button-bg: #d1e7d1; --music-select-button-text: #2e4d07;
+            --music-select-button-hover-bg: #c1e1c1; --music-select-button-selected-bg: #8fbc8f;
+            --music-select-button-selected-shadow: #3a5f0b;
+        }
+        body.theme-ocean {
+            --bg-primary: #E0F7FA; --bg-container: #FFFFFF; --text-primary: #006064;
+            --text-secondary: #00ACC1; --border-color: #4DD0E1; --cell-bg: #B2EBF2;
+            --cell-hover-bg: #80DEEA; --button-bg: #00BCD4; --button-hover-bg: #0097A7;
+            --button-text: white; --leaderboard-bg: #B2EBF2; --leaderboard-text: #004D40;
+            --input-bg: #E0F7FA; --input-text: #006064; --input-border: #4DD0E1;
+            --title-color1: #00BCD4; --title-color2: #29B6F6; --title-color3: #FFD740;
+            --music-select-button-bg: #B2EBF2; --music-select-button-text: #004D40;
+            --music-select-button-hover-bg: #80DEEA; --music-select-button-selected-bg: #00BCD4;
+            --music-select-button-selected-shadow: #006064;
+        }
+        body.theme-arcade {
+            --bg-primary: #1A1A2E; --bg-container: #24243E; --text-primary: #E0E0FF;
+            --text-secondary: #9A9AFF; --border-color: #F07178; --cell-bg: #36365A;
+            --cell-hover-bg: #4A4A7A; --button-bg: #FF6AC1; --button-hover-bg: #FF40A1;
+            --button-text: #1A1A2E; --leaderboard-bg: #36365A; --leaderboard-text: #C0C0FF;
+            --input-bg: #24243E; --input-text: #E0E0FF; --input-border: #F07178; 
+            --title-color1: #FF6AC1; --title-color2: #00FFFF; --title-color3: #FFFF00;
+            --music-select-button-bg: #36365A; --music-select-button-text: #C0C0FF;
+            --music-select-button-hover-bg: #4A4A7A; --music-select-button-selected-bg: #FF6AC1;
+            --music-select-button-selected-shadow: #E0E0FF;
+        }
+
+        #interaction-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7); color: white; display: flex;
+            justify-content: center; align-items: center; font-size: 1.5rem;
+            z-index: 1000; cursor: pointer; text-align: center; padding: 2rem;
+        }
+    </style>
+</head>
+<body class=""> <div id="interaction-overlay">Click anywhere to start the game!</div>
+
+    <div class="game-container">
+
+        <div id="screen-menu" class="screen active">
+            <h1 id="main-title" class="animated-title text-2xl font-bold mb-2">Whack-a-Silly-Face</h1>
+            <div class="xp-display mb-2">Player XP: <span id="menu-xp-display">0</span></div>
+            <div id="player-title-display" class="text-sm mb-2 text-[var(--xp-color)]"></div>
+
+            <div class="mb-3">
+                <h2 class="text-lg mb-1">Difficulty:</h2>
+                <button class="difficulty-button" data-difficulty="easy">Easy</button>
+                <button class="difficulty-button" data-difficulty="medium">Medium</button>
+                <button class="difficulty-button" data-difficulty="hard">Hard</button>
+                <button class="difficulty-button" data-difficulty="marathon">Marathon</button>
+            </div>
+
+            <button id="start-button" class="game-button text-lg py-2 px-5 mb-2">Start Game</button>
+
+            <div class="flex flex-wrap justify-center">
+                <button class="menu-button" data-screen="leaderboard">Leaderboard</button>
+                <button class="menu-button" data-screen="themes">Themes</button>
+                <button class="menu-button" data-screen="rewards">Rewards</button>
+                <button class="menu-button" data-screen="stats">Stats</button>
+                <button class="menu-button" data-screen="music">Music</button> <button id="sound-toggle-button" class="sound-toggle-button">Sound: On</button>
+            </div>
+        </div>
+
+        <div id="screen-game" class="screen">
+            <div class="stats w-full flex justify-between px-2">
+                <span>Score: <span id="score">0</span></span>
+                <span id="active-powerup-display" class="text-sm"></span>
+                <span>Time: <span id="time-left">0</span>s</span>
+            </div>
+            <div id="message-box" class="text-center"></div>
+            <div class="grid" id="game-grid"></div>
+            <button id="quit-button" class="menu-button mt-2">Quit</button>
+        </div>
+
+        <div id="screen-gameover" class="screen">
+            <h2 class="text-2xl font-bold mb-3">Game Over!</h2>
+            <div id="game-over-message" class="text-lg mb-3">Final Score: 0 (+0 XP)</div>
+            <div id="awesome-whacker-bonus-msg" class="text-md text-green-500 mb-3"></div>
+            <div id="game-over-input" class="mb-3" style="display: none;">
+                <label for="name-input" class="block mb-1 text-sm">High Score! Enter Name (3 letters):</label>
+                <input type="text" id="name-input" maxlength="3" pattern="[A-Za-z]{3}" placeholder="ABC">
+                <button id="submit-score-button" class="game-button">Submit</button>
+            </div>
+            <button id="play-again-button" class="game-button">Play Again</button>
+            <button class="menu-button" data-screen="menu">Main Menu</button>
+        </div>
+
+        <div id="screen-leaderboard" class="screen">
+            <h2 class="text-xl font-bold mb-3">Leaderboard</h2>
+            <ol id="leaderboard-list"><li>Loading...</li></ol>
+            <button class="menu-button mt-3" data-screen="menu">Back to Menu</button>
+        </div>
+
+        <div id="screen-themes" class="screen">
+            <h2 class="text-xl font-bold mb-3">Select Theme</h2>
+            <div class="xp-display mb-3">Player XP: <span id="themes-xp-display">0</span></div>
+            <div id="theme-selection" class="mb-3"></div> 
+            <button class="menu-button mt-3" data-screen="menu">Back to Menu</button>
+        </div>
+
+        <div id="screen-rewards" class="screen">
+            <h2 class="text-xl font-bold mb-3">XP Rewards Track</h2>
+            <div class="xp-display mb-3">Player XP: <span id="rewards-xp-display">0</span></div>
+            <ul class="rewards-track"></ul>
+            <button class="menu-button mt-3" data-screen="menu">Back to Menu</button>
+        </div>
+        
+        <div id="screen-stats" class="screen">
+            <h2 class="text-xl font-bold mb-3">Player Stats</h2>
+            <ul class="stats-list"></ul>
+            <button class="menu-button mt-3" data-screen="menu">Back to Menu</button>
+        </div>
+
+        <div id="screen-music" class="screen">
+            <h2 class="text-xl font-bold mb-3">Select Menu Music</h2>
+            <div id="music-selection-container" class="flex flex-col items-center w-full">
+                </div>
+            <button class="menu-button mt-4" data-screen="menu">Back to Menu</button>
+        </div>
+
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const mainTitle = document.getElementById('main-title');
+        const screens = {
+            menu: document.getElementById('screen-menu'), game: document.getElementById('screen-game'),
+            gameover: document.getElementById('screen-gameover'), leaderboard: document.getElementById('screen-leaderboard'),
+            themes: document.getElementById('screen-themes'), rewards: document.getElementById('screen-rewards'),
+            stats: document.getElementById('screen-stats'), music: document.getElementById('screen-music') 
+        };
+        const gridEl = document.getElementById('game-grid'); 
+        const scoreDisplay = document.getElementById('score');
+        const timeLeftDisplay = document.getElementById('time-left');
+        const messageBox = document.getElementById('message-box');
+        const startButton = document.getElementById('start-button');
+        const quitButton = document.getElementById('quit-button');
+        const playAgainButton = document.getElementById('play-again-button');
+        const gameOverMessage = document.getElementById('game-over-message');
+        const awesomeWhackerBonusMsg = document.getElementById('awesome-whacker-bonus-msg');
+        const gameOverInput = document.getElementById('game-over-input');
+        const nameInput = document.getElementById('name-input');
+        const submitScoreButton = document.getElementById('submit-score-button');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const themeSelectionContainer = document.getElementById('theme-selection');
+        const musicSelectionContainer = document.getElementById('music-selection-container'); 
+        const menuXpDisplay = document.getElementById('menu-xp-display');
+        const themesXpDisplay = document.getElementById('themes-xp-display');
+        const rewardsXpDisplay = document.getElementById('rewards-xp-display');
+        const playerTitleDisplay = document.getElementById('player-title-display');
+        const rewardsTrackContainer = document.querySelector('#screen-rewards .rewards-track');
+        const statsListContainer = document.querySelector('#screen-stats .stats-list');
+        const soundToggleButton = document.getElementById('sound-toggle-button');
+        const activePowerupDisplay = document.getElementById('active-powerup-display');
+        const difficultyButtons = document.querySelectorAll('.difficulty-button');
+        const menuButtons = document.querySelectorAll('.menu-button');
+        const interactionOverlay = document.getElementById('interaction-overlay');
+
+        // --- Game Constants & Config ---
+        const MAX_LEADERBOARD_ENTRIES = 10;
+        const FACE_TYPE = {
+            NORMAL: 'normal', BONUS: 'bonus', PENALTY: 'penalty', FRENZY: 'frenzy',
+            SLOWMO: 'slowmo', XPBOOST: 'xpboost', TIMEFREEZE: 'timefreeze'
+        };
+        let baseSillyFaces = ['🤪', '😂', '🤔', '🥳', '🤡', '👻', '🤩', '🤯', '😎']; 
+        let currentSillyFaces = [...baseSillyFaces]; 
+
+        const bonusFaceEmoji = '⭐'; const penaltyFaceEmoji = '💣'; const frenzyFaceEmoji = '⚡';
+        const slowmoFaceEmoji = '🐢'; const xpBoostFaceEmoji = '✨'; const timeFreezeEmoji = '❄️';
+
+        const difficulties = {
+            easy: { id: 'easy', name: 'Easy', duration: 30, interval: 700, minTime: 700, maxTime: 1400, bonusChance: 0.10, penaltyChance: 0.05, powerupChance: 0.08, xpMultiplier: 0.7 },
+            medium: { id: 'medium', name: 'Medium', duration: 25, interval: 500, minTime: 500, maxTime: 1000, bonusChance: 0.12, penaltyChance: 0.08, powerupChance: 0.10, xpMultiplier: 1.0 },
+            hard: { id: 'hard', name: 'Hard', duration: 20, interval: 380, minTime: 350, maxTime: 750, bonusChance: 0.15, penaltyChance: 0.12, powerupChance: 0.12, xpMultiplier: 1.5 },
+            marathon: { id: 'marathon', name: 'Marathon', duration: 60, interval: 450, minTime: 400, maxTime: 900, bonusChance: 0.10, penaltyChance: 0.10, powerupChance: 0.15, xpMultiplier: 1.2 }
+        };
+        const AWESOME_WHACKER_THRESHOLD_MULTIPLIER = 2.5; 
+
+        const themes = {
+            default: { id: 'default', name: 'Default', className: '', unlockXP: 0 },
+            dark: { id: 'dark', name: 'Dark Mode', className: 'theme-dark', unlockXP: 100 },
+            forest: { id: 'forest', name: 'Forest', className: 'theme-forest', unlockXP: 300 },
+            ocean: { id: 'ocean', name: 'Ocean Blue', className: 'theme-ocean', unlockXP: 600 },
+            arcade: { id: 'arcade', name: 'Retro Arcade', className: 'theme-arcade', unlockXP: 1000 },
+        };
+
+        const battlePassTiers = [
+            { xpRequired: 50, name: "Emoji Pack: Animals", type: 'emoji_pack', emojis: ['🐸','🐶','🦊','🐱','🐭','🐹','🐰','🐻','🐼'] },
+            { xpRequired: 150, name: "Title: Novice Whacker", type: 'title' },
+            { xpRequired: 350, name: "Emoji Pack: Food", type: 'emoji_pack', emojis: ['🍕','🍔','🍟','🌭','🍿','🥨','🥯','🥞','🧇'] },
+            { xpRequired: 600, name: "Title: Skilled Smasher", type: 'title' },
+            { xpRequired: 1000, name: "Emoji Pack: Spooky", type: 'emoji_pack', emojis: ['🎃','💀','🧛','🧟','👹','👽','🤖','👾'] },
+            { xpRequired: 1500, name: "Title: Master of Mayhem", type: 'title' },
+        ];
+
+        // --- Game State Variables ---
+        let currentDifficulty = difficulties.medium;
+        let score = 0; let timeLeft = 0; let timerId = null; let faceTimerId = null;
+        let gameActive = false; let currentScreen = 'menu'; let totalXP = 0;
+        let leaderboard = []; let unlockedThemes = ['default']; let selectedTheme = 'default';
+        let unlockedRewards = []; let currentTitle = "";
+        let audioInitialized = false; let soundEnabled = true;
+        let selectedMusicTrackId = 'chillGroove'; 
+        const cells = []; const activeFaces = new Map();
+        let misses = 0; 
+        let frenzyModeActive = false; let frenzyTimeoutId = null; let originalFaceInterval;
+        let slowMoActive = false; let slowMoTimeoutId = null;
+        let xpBoostActive = false; let xpBoostTimeoutId = null;
+        let timeFreezeActive = false; let timeFreezeTimeoutId = null;
+        let playerStats = {
+            totalGamesPlayed: 0, totalWhacks: 0, totalScore: 0,
+            difficultyPlays: { easy: 0, medium: 0, hard: 0, marathon: 0 }
+        };
+
+        // --- Sound Effects & Music ---
+        let sfx = {}; 
+        let musicTracks = {}; 
+        let globalEffects = {}; 
+        let masterVolume;
+
+        const musicTrackData = {
+            chillGroove: {
+                name: "Chill Groove",
+                bpm: 120,
+                parts: ['melody', 'bass', 'pad', 'kick', 'snare', 'hiHat'],
+            },
+            arcadePulse: {
+                name: "Arcade Pulse",
+                bpm: 135,
+                parts: ['lead', 'arp', 'bass', 'kick', 'clap', 'hiHatOpen'],
+            },
+            powerDrive: {
+                name: "Power Drive",
+                bpm: 128,
+                parts: ['driveLead', 'rhythmSaw', 'subBass', 'powerKick', 'punchSnare', 'rideCymbal'],
+            }
+        };
+
+
+        function initAudio() {
+            if (audioInitialized) return;
+            try {
+                Tone.start();
+                masterVolume = new Tone.Volume(-12).toDestination(); 
+
+                globalEffects.reverb = new Tone.Reverb({ decay: 1.0, wet: 0.2 }).connect(masterVolume);
+                globalEffects.delay = new Tone.FeedbackDelay("8n.", 0.25).connect(globalEffects.reverb);
+                globalEffects.chorus = new Tone.Chorus(1.5, 1.2, 0.5).connect(globalEffects.delay);
+
+                sfx.hit = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 } }).connect(masterVolume);
+                sfx.miss = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 } }).connect(masterVolume);
+                sfx.end = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.1, decay: 0.5, sustain: 0.1, release: 0.5 } }).connect(masterVolume);
+                sfx.bonus = new Tone.Synth({ oscillator: { type: 'triangle8' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.2 } }).connect(masterVolume);
+                sfx.penalty = new Tone.Synth({ oscillator: { type: 'sawtooth6' }, envelope: { attack: 0.05, decay: 0.3, sustain: 0, release: 0.1 } }).connect(masterVolume);
+                sfx.powerup = new Tone.Synth({ oscillator: {type: 'pulse', width: 0.3}, envelope: {attack: 0.01, decay: 0.4, sustain: 0.1, release: 0.3}}).connect(masterVolume);
+                sfx.powerdown = new Tone.Synth({ oscillator: {type: 'fatsawtooth', count: 3, spread: 20}, envelope: {attack: 0.01, decay: 0.4, sustain: 0.1, release: 0.3}}).connect(masterVolume);
+
+                // Track 1: Chill Groove
+                musicTracks.chillGroove = {
+                    synths: {
+                        melody: new Tone.FMSynth({ harmonicity: 2, modulationIndex: 3, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.8 }, modulation: { type: "square" }, modulationEnvelope: { attack: 0.02, decay: 0.2, sustain: 0.0, release: 0.8 } }).connect(globalEffects.chorus),
+                        bass: new Tone.MonoSynth({ oscillator: { type: "fatsawtooth", count: 3, spread: 30 }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.5 }, filter: { Q: 2, type: "lowpass", rolloff: -24, frequency: 300 }, filterEnvelope: { attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.3, baseFrequency: 50, octaves: 3 } }).connect(globalEffects.reverb),
+                        pad: new Tone.PolySynth(Tone.AMSynth, { harmonicity: 1.01, envelope: { attack: 0.5, decay: 1.0, sustain: 0.8, release: 1.5 }, modulation: { type: "sine" }, modulationEnvelope: { attack: 1.0, decay: 0.5, sustain: 1, release: 1.5 } }).connect(globalEffects.reverb),
+                        kick: new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 5, envelope: { attack: 0.001, decay: 0.3, sustain: 0.01, release: 0.5 } }).connect(masterVolume),
+                        snare: new Tone.NoiseSynth({ noise: { type: 'pink', playbackRate: 0.5 }, envelope: { attack: 0.005, decay: 0.15, sustain: 0, release: 0.1 } }).connect(masterVolume),
+                        hiHat: new Tone.MetalSynth({ frequency: 250, envelope: { attack: 0.001, decay: 0.05, release: 0.01 }, harmonicity: 3.1, modulationIndex: 16, resonance: 2000, octaves: 0.5 }).connect(masterVolume)
+                    }, parts: {}, notes: {}
+                };
+                musicTracks.chillGroove.synths.melody.volume.value = -12; musicTracks.chillGroove.synths.bass.volume.value = -10; musicTracks.chillGroove.synths.pad.volume.value = -20;
+                musicTracks.chillGroove.synths.kick.volume.value = -5; musicTracks.chillGroove.synths.snare.volume.value = -15; musicTracks.chillGroove.synths.hiHat.volume.value = -22;
+                const CG_M = "m"; const CG_N4 = "4n"; const CG_N8 = "8n"; const CG_N16 = "16n"; const CG_N8D = "8n.";
+                musicTracks.chillGroove.notes.melody = [{t:`0:0`,n:'G4',d:CG_N8D},{t:`0:1.5`,n:'A4',d:CG_N16},{t:`0:2`,n:'G4',d:CG_N8},{t:`0:3`,n:'E4',d:CG_N8},{t:`1:0`,n:'C4',d:CG_N4},{t:`1:2`,n:'D4',d:CG_N8},{t:`1:3`,n:'E4',d:CG_N8},{t:`2:0`,n:'G4',d:CG_N8D},{t:`2:1.5`,n:'A4',d:CG_N16},{t:`2:2`,n:'G4',d:CG_N8},{t:`2:3`,n:'C5',d:CG_N8},{t:`3:0`,n:'B4',d:CG_N4},{t:`3:2`,n:'A4',d:CG_N4},{t:`4:0`,n:'F4',d:CG_N8D},{t:`4:1.5`,n:'G4',d:CG_N16},{t:`4:2`,n:'F4',d:CG_N8},{t:`4:3`,n:'D4',d:CG_N8},{t:`5:0`,n:'B3',d:CG_N4},{t:`5:2`,n:'C4',d:CG_N8},{t:`5:3`,n:'D4',d:CG_N8},{t:`6:0`,n:'E4',d:CG_N8},{t:`6:1`,n:'D4',d:CG_N8},{t:`6:2`,n:'C4',d:CG_N8D},{t:`7:0`,n:'G3',d:CG_N4},{t:`7:2`,n:'C4',d:CG_N4}];
+                musicTracks.chillGroove.notes.bass = [{t:`0:0`,n:'C2',d:`1${CG_M}`},{t:`1:0`,n:'G2',d:`1${CG_M}`},{t:`2:0`,n:'Am1',d:`1${CG_M}`},{t:`3:0`,n:'F1',d:`1${CG_M}`},{t:`4:0`,n:'Dm1',d:`1${CG_M}`},{t:`5:0`,n:'G1',d:`1${CG_M}`},{t:`6:0`,n:'C1',d:`2n`},{t:`6:2`,n:'G1',d:`2n`},{t:`7:0`,n:'C1',d:`1${CG_M}`}];
+                musicTracks.chillGroove.notes.pad = [{t:`0:0`,ns:['C3','E3','G3'],d:`1${CG_M}`},{t:`1:0`,ns:['G3','B3','D4'],d:`1${CG_M}`},{t:`2:0`,ns:['A2','C3','E3'],d:`1${CG_M}`},{t:`3:0`,ns:['F2','A2','C3'],d:`1${CG_M}`},{t:`4:0`,ns:['D2','F2','A2'],d:`1${CG_M}`},{t:`5:0`,ns:['G2','B2','D3'],d:`1${CG_M}`},{t:`6:0`,ns:['C3','E3','G3'],d:`1${CG_M}`},{t:`7:0`,ns:['C3','E3','G3','B3'],d:`1${CG_M}`}];
+                musicTracks.chillGroove.notes.kick = [`0:0`,`0:2.5`,`1:0`,`1:2.5`,`2:0`,`2:2.5`,`3:0`,`3:1.5`,`3:3`,`4:0`,`4:2.5`,`5:0`,`5:2.5`,`6:0`,`6:2`,`7:0`,`7:2.5`,`7:3.5`];
+                musicTracks.chillGroove.notes.snare = [`0:2`,`1:2`,`2:2`,`3:2`,`4:2`,`5:2`,`6:2`,`7:2`];
+                musicTracks.chillGroove.notes.hiHat = Array(8).fill(0).flatMap((_,i)=>[`${i}:0`,`${i}:0.5`,`${i}:1`,`${i}:1.5`,`${i}:2`,`${i}:2.5`,`${i}:3`,`${i}:3.5`]);
+
+                // Track 2: Arcade Pulse
+                musicTracks.arcadePulse = {
+                    synths: {
+                        lead: new Tone.Synth({ oscillator: { type: "pulse", width: 0.4 }, envelope: { attack: 0.01, decay: 0.15, sustain: 0.1, release: 0.2 } }).connect(globalEffects.delay),
+                        arp: new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 } }).connect(globalEffects.reverb),
+                        bass: new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.2 } }).connect(masterVolume),
+                        kick: new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 4, envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.3 } }).connect(masterVolume),
+                        clap: new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.005, decay: 0.08, sustain: 0, release: 0.1 } }).connect(masterVolume),
+                        hiHatOpen: new Tone.MetalSynth({ frequency: 300, envelope: { attack:0.001, decay:0.2, release: 0.05}, harmonicity: 4.1, modulationIndex:20, resonance: 3000, octaves: 1}).connect(masterVolume)
+                    }, parts: {}, notes: {}
+                };
+                musicTracks.arcadePulse.synths.lead.volume.value = -10; musicTracks.arcadePulse.synths.arp.volume.value = -18; musicTracks.arcadePulse.synths.bass.volume.value = -12;
+                musicTracks.arcadePulse.synths.kick.volume.value = -6; musicTracks.arcadePulse.synths.clap.volume.value = -14; musicTracks.arcadePulse.synths.hiHatOpen.volume.value = -20;
+                const AP_M = "m"; const AP_N8 = "8n"; const AP_N16 = "16n";
+                musicTracks.arcadePulse.notes.lead = [{t:`0:0`,n:'C5',d:AP_N8},{t:`0:1`,n:'E5',d:AP_N8},{t:`0:2`,n:'G5',d:AP_N8},{t:`0:3`,n:'E5',d:AP_N8},{t:`1:0`,n:'D5',d:AP_N8},{t:`1:1`,n:'F5',d:AP_N8},{t:`1:2`,n:'A5',d:AP_N8},{t:`1:3`,n:'F5',d:AP_N8},{t:`2:0`,n:'E5',d:AP_N8},{t:`2:1`,n:'G5',d:AP_N8},{t:`2:2`,n:'B5',d:AP_N8},{t:`2:3`,n:'G5',d:AP_N8},{t:`3:0`,n:'A5',d:AP_N8},{t:`3:1`,n:'C6',d:AP_N8},{t:`3:2`,n:'E6',d:AP_N8},{t:`3:3`,n:'C6',d:AP_N8}];
+                musicTracks.arcadePulse.notes.arp = ['C4','E4','G4','C5'].flatMap((n,idx) => Array(8).fill(0).map((_,i) => ({t:`${idx*2}:${i*0.5}`, n:n, d:AP_N16}))); 
+                musicTracks.arcadePulse.notes.bass = [{t:`0:0`,n:'C3',d:`2${AP_M}`},{t:`2:0`,n:'Am2',d:`2${AP_M}`},{t:`4:0`,n:'F2',d:`2${AP_M}`},{t:`6:0`,n:'G2',d:`2${AP_M}`}]; 
+                musicTracks.arcadePulse.notes.kick = Array(8).fill(0).map((_,i) => `${i}:0`); 
+                musicTracks.arcadePulse.notes.clap = Array(4).fill(0).map((_,i) => `${i*2}:2`); 
+                musicTracks.arcadePulse.notes.hiHatOpen = Array(8).fill(0).map((_,i) => `${i}:1.5`); 
+
+                // Track 3: Power Drive
+                musicTracks.powerDrive = {
+                    synths: {
+                        driveLead: new Tone.Synth({ oscillator: { type: "fatsawtooth", count: 4, spread: 25 }, envelope: { attack: 0.02, decay: 0.3, sustain: 0.2, release: 0.4 }, filter: {type:'lowpass', frequency: 2000, Q:1.5} }).connect(globalEffects.delay),
+                        rhythmSaw: new Tone.PolySynth(Tone.Synth, { oscillator: {type: "sawtooth"}, envelope: {attack:0.01, decay:0.2, sustain:0.1, release:0.2}}).connect(globalEffects.reverb),
+                        subBass: new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.5, release: 0.3 } }).connect(masterVolume),
+                        powerKick: new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 6, envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.4 } }).connect(masterVolume),
+                        punchSnare: new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 } }).connect(masterVolume),
+                        rideCymbal: new Tone.MetalSynth({frequency:400, envelope:{attack:0.001, decay:0.4, release:0.1}, harmonicity:5.1, modulationIndex:32, resonance:4000, octaves:1.5}).connect(globalEffects.reverb)
+                    }, parts: {}, notes: {}
+                };
+                musicTracks.powerDrive.synths.driveLead.volume.value = -14; musicTracks.powerDrive.synths.rhythmSaw.volume.value = -18; musicTracks.powerDrive.synths.subBass.volume.value = -8;
+                musicTracks.powerDrive.synths.powerKick.volume.value = -4; musicTracks.powerDrive.synths.punchSnare.volume.value = -12; musicTracks.powerDrive.synths.rideCymbal.volume.value = -24;
+                const PD_M = "m"; const PD_N4 = "4n"; const PD_N8 = "8n"; const PD_N16 = "16n";
+                musicTracks.powerDrive.notes.driveLead = [{t:`0:0`,n:'G3',d:PD_N8},{t:`0:1`,n:'C4',d:PD_N8},{t:`0:2`,n:'D#4',d:PD_N8},{t:`0:3`,n:'G4',d:PD_N8},{t:`1:0`,n:'C5',d:PD_N4},{t:`1:2`,n:'G4',d:PD_N4},{t:`2:0`,n:'A#4',d:PD_N8},{t:`2:1`,n:'G4',d:PD_N8},{t:`2:2`,n:'F4',d:PD_N8},{t:`2:3`,n:'D#4',d:PD_N8},{t:`3:0`,n:'D4',d:`1${PD_M}`}]; 
+                musicTracks.powerDrive.notes.rhythmSaw = [{t:`0:0`,ns:['C3','G3','C4'],d:PD_N8},{t:`0:1`,ns:['C3','G3','C4'],d:PD_N8},{t:`0:2`,ns:['C3','G3','C4'],d:PD_N8},{t:`0:3`,ns:['C3','G3','C4'],d:PD_N8},{t:`1:0`,ns:['F2','C3','F3'],d:PD_N8},{t:`1:1`,ns:['F2','C3','F3'],d:PD_N8},{t:`1:2`,ns:['F2','C3','F3'],d:PD_N8},{t:`1:3`,ns:['F2','C3','F3'],d:PD_N8},{t:`2:0`,ns:['G2','D3','G3'],d:PD_N8},{t:`2:1`,ns:['G2','D3','G3'],d:PD_N8},{t:`2:2`,ns:['G2','D3','G3'],d:PD_N8},{t:`2:3`,ns:['G2','D3','G3'],d:PD_N8},{t:`3:0`,ns:['D#2','A#2','D#3'],d:PD_N4},{t:`3:2`,ns:['D2','A2','D3'],d:PD_N4}];
+                musicTracks.powerDrive.notes.subBass = [{t:`0:0`,n:'C1',d:`1${PD_M}`},{t:`1:0`,n:'F1',d:`1${PD_M}`},{t:`2:0`,n:'G1',d:`1${PD_M}`},{t:`3:0`,n:'D#1',d:`2n`}, {t:`3:2`, n:'D1', d:`2n`}];
+                musicTracks.powerDrive.notes.powerKick = Array(4).fill(0).flatMap((_,i) => [`${i}:0`, `${i}:1.5`, `${i}:3`]); 
+                musicTracks.powerDrive.notes.punchSnare = Array(4).fill(0).map((_,i) => `${i}:2`);
+                musicTracks.powerDrive.notes.rideCymbal = Array(4).fill(0).flatMap((_,i) => [`${i}:0`, `${i}:1`, `${i}:2`, `${i}:3`]); 
+
+                // Create Tone.Parts for each track
+                for (const trackId in musicTracks) {
+                    const track = musicTracks[trackId];
+                    const loopLength = (trackId === 'chillGroove' || trackId === 'arcadePulse') ? `8${CG_M}` : `4${CG_M}`; 
+                    
+                    for (const partName in track.synths) {
+                        if (track.notes[partName]) {
+                            let partCallback;
+                            if (partName === 'pad' || partName === 'rhythmSaw') { 
+                                partCallback = (time, value) => track.synths[partName].triggerAttackRelease(value.ns, value.d, time);
+                            } else if (partName.includes('Kick') || partName.includes('kick')) {
+                                partCallback = (time) => track.synths[partName].triggerAttackRelease("C1", "8n", time);
+                            } else if (partName.includes('Snare') || partName.includes('clap')) {
+                                partCallback = (time) => track.synths[partName].triggerAttackRelease("8n", time);
+                            } else if (partName.includes('Hat') || partName.includes('Cymbal')) {
+                                 partCallback = (time) => track.synths[partName].triggerAttackRelease("16n", time);
+                            } else { 
+                                partCallback = (time, value) => track.synths[partName].triggerAttackRelease(value.n, value.d, time);
+                            }
+                            track.parts[partName] = new Tone.Part(partCallback, track.notes[partName]).set({ loop: true, loopEnd: loopLength, humanize: "64n" });
+                        }
+                    }
+                }
+                
+                audioInitialized = true;
+                console.log("Audio Initialized (Music Menu Update)");
+                updateSoundButtonText();
+                displayMusicSelection(); 
+                if (soundEnabled) startSelectedMenuMusic(); 
+                interactionOverlay.style.display = 'none';
+            } catch (error) {
+                console.error("Error initializing audio:", error);
+                interactionOverlay.textContent = "Audio Error. Click to try again.";
+            }
+        }
+
+        function startSelectedMenuMusic() {
+            if (!audioInitialized || !soundEnabled ) return; 
+            stopAllMenuMusic(); 
+
+            const track = musicTracks[selectedMusicTrackId];
+            if (track) {
+                Tone.Transport.bpm.value = musicTrackData[selectedMusicTrackId].bpm;
+                for (const partName in track.parts) {
+                    if (track.parts[partName] && track.parts[partName].state !== 'started') { 
+                        track.parts[partName].start(0);
+                    }
+                }
+                 if (Tone.Transport.state !== 'started') Tone.Transport.start("+0.1");
+                console.log(`Menu music started: ${selectedMusicTrackId}`);
+            } else {
+                console.warn(`Music track ${selectedMusicTrackId} not found.`);
+            }
+        }
+
+        function stopAllMenuMusic() {
+            if (!audioInitialized) return;
+            for (const trackId in musicTracks) {
+                const track = musicTracks[trackId];
+                for (const partName in track.parts) {
+                    if (track.parts[partName] && track.parts[partName].state === 'started') { 
+                        track.parts[partName].stop(0);
+                    }
+                }
+            }
+            if (Tone.Transport.state === 'started') Tone.Transport.stop();
+        }
+        
+        function selectMusicTrack(trackId) {
+            if (musicTracks[trackId]) {
+                selectedMusicTrackId = trackId;
+                stopAllMenuMusic(); 
+                
+                const menuMusicScreens = ['menu', 'leaderboard', 'themes', 'rewards', 'stats', 'music'];
+                if (soundEnabled && menuMusicScreens.includes(currentScreen)) { 
+                    startSelectedMenuMusic();
+                }
+                displayMusicSelection(); 
+                saveData();
+                console.log(`Selected music track: ${trackId}`);
+            }
+        }
+
+        function displayMusicSelection() {
+            musicSelectionContainer.innerHTML = ''; 
+            for (const trackId in musicTrackData) {
+                const button = document.createElement('button');
+                button.classList.add('music-select-button');
+                if (trackId === selectedMusicTrackId) {
+                    button.classList.add('selected');
+                }
+                button.textContent = musicTrackData[trackId].name;
+                button.dataset.trackId = trackId;
+                button.addEventListener('click', () => selectMusicTrack(trackId));
+                musicSelectionContainer.appendChild(button);
+            }
+        }
+
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            updateSoundButtonText();
+            if (soundEnabled) {
+                Tone.Destination.mute = false;
+                const menuMusicScreens = ['menu', 'leaderboard', 'themes', 'rewards', 'stats', 'music'];
+                if (menuMusicScreens.includes(currentScreen) && audioInitialized) startSelectedMenuMusic();
+            } else {
+                Tone.Destination.mute = true;
+                if (audioInitialized) stopAllMenuMusic();
+            }
+            saveData();
+        }
+        function updateSoundButtonText(){
+            soundToggleButton.textContent = `Sound: ${soundEnabled ? 'On' : 'Off'}`;
+        }
+
+        // --- Screen Navigation & UI Updates ---
+        function showScreen(screenId) {
+            const menuMusicScreens = ['menu', 'leaderboard', 'themes', 'rewards', 'stats', 'music'];
+            
+            if (audioInitialized && Tone.Transport.state === 'started' && 
+                menuMusicScreens.includes(currentScreen) && !menuMusicScreens.includes(screenId)) {
+                 stopAllMenuMusic();
+            }
+
+            Object.values(screens).forEach(screen => screen.classList.remove('active'));
+            if (screens[screenId]) {
+                screens[screenId].classList.add('active');
+                currentScreen = screenId; 
+
+                if (menuMusicScreens.includes(screenId)) {
+                    updateMenuUI(); 
+                    if (soundEnabled && audioInitialized && Tone.Transport.state !== 'started') {
+                        startSelectedMenuMusic(); 
+                    }
+                }
+
+                if (screenId === 'leaderboard') displayLeaderboard();
+                else if (screenId === 'themes') displayThemes();
+                else if (screenId === 'rewards') displayRewards();
+                else if (screenId === 'stats') displayStats();
+                else if (screenId === 'music') displayMusicSelection();
+
+
+            } else {
+                console.error("Screen not found:", screenId);
+                screens.menu.classList.add('active'); currentScreen = 'menu';
+                 if (soundEnabled && audioInitialized) startSelectedMenuMusic();
+            }
+        }
+        function updateMenuUI() {
+            updateXPDisplay();
+            selectDifficulty(currentDifficulty.id);
+            playerTitleDisplay.textContent = currentTitle ? `Title: ${currentTitle}` : "";
+        }
+        function updateXPDisplay() {
+            menuXpDisplay.textContent = totalXP;
+            themesXpDisplay.textContent = totalXP;
+            rewardsXpDisplay.textContent = totalXP;
+        }
+
+
+        // --- Game Logic ---
+        function createGrid() {
+            gridEl.innerHTML = ''; cells.length = 0;
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell'); cell.dataset.index = i;
+                const faceSpan = document.createElement('span');
+                faceSpan.classList.add('face');
+                cell.appendChild(faceSpan);
+                cell.addEventListener('mousedown', handleCellClick);
+                gridEl.appendChild(cell); cells.push(cell);
+            }
+        }
+
+        function handleCellClick(event) {
+            if (!gameActive) return;
+            const cell = event.currentTarget;
+            const cellIndex = parseInt(cell.dataset.index);
+
+            if (activeFaces.has(cellIndex)) {
+                const faceData = activeFaces.get(cellIndex);
+                clearTimeout(faceData.timeoutId); activeFaces.delete(cellIndex);
+                faceData.element.className = 'face'; 
+                faceData.element.textContent = ''; faceData.element.style.animation = '';
+
+                let pointsChange = 1; let hitAnimation = 'hit-flash-good 0.2s ease-out';
+                let message = ''; let messageColor = 'var(--text-primary)';
+                let playSound = sfx.hit;
+
+                playerStats.totalWhacks++;
+
+                switch (faceData.type) {
+                    case FACE_TYPE.BONUS:
+                        pointsChange = frenzyModeActive ? 10 : 5; 
+                        playSound = sfx.bonus; hitAnimation = 'hit-flash-bonus 0.3s ease-out';
+                        message = `+${pointsChange} Bonus!`; messageColor = 'var(--xp-color)';
+                        break;
+                    case FACE_TYPE.PENALTY:
+                        // --- INSTANT GAME OVER ON BOMB ---
+                        if(soundEnabled && sfx.penalty) sfx.penalty.triggerAttackRelease('A1', '2n'); // Low, long boom
+                        showGameMessage("KABOOM! Game Over!", "#ef4444");
+                        endGame(); // End the game immediately
+                        return; // Stop further processing for this click
+                        // --- END INSTANT GAME OVER ---
+                        // pointsChange = -3; score = Math.max(0, score + pointsChange) - pointsChange; 
+                        // playSound = sfx.penalty; hitAnimation = 'hit-flash-penalty 0.3s ease-out';
+                        // message = `${pointsChange} Penalty!`; messageColor = '#ef4444'; 
+                        // break;
+                    case FACE_TYPE.FRENZY:
+                        activateFrenzyMode(); message = "FRENZY MODE!"; messageColor = 'orangered'; playSound = sfx.powerup;
+                        break;
+                    case FACE_TYPE.SLOWMO:
+                        activateSlowMoMode(); message = "SLOW MOTION!"; messageColor = 'deepskyblue'; playSound = sfx.powerdown;
+                        break;
+                    case FACE_TYPE.XPBOOST:
+                        activateXPBoost(); message = "XP BOOST x2!"; messageColor = 'gold'; playSound = sfx.powerup;
+                        break;
+                    case FACE_TYPE.TIMEFREEZE:
+                        activateTimeFreeze(); message = "TIME FROZEN!"; messageColor = 'cyan'; playSound = sfx.powerup;
+                        break;
+                    default: 
+                        pointsChange = frenzyModeActive ? 3 : 1; 
+                        break;
+                }
+                score += pointsChange;
+                scoreDisplay.textContent = score;
+
+                if(soundEnabled && playSound) playSound.triggerAttackRelease(playSound === sfx.penalty ? 'C3' : 'C5', '8n');
+
+                cell.style.animation = hitAnimation;
+                setTimeout(() => {
+                    cell.style.animation = '';
+                    if (!activeFaces.has(cellIndex)) cell.style.backgroundColor = 'var(--cell-bg)';
+                }, hitAnimation.includes('bonus') || hitAnimation.includes('penalty') ? 300 : 200);
+
+                if (message) showGameMessage(message, messageColor);
+            } else { 
+                misses++;
+                if(soundEnabled && sfx.miss) sfx.miss.triggerAttackRelease('A2', '8n');
+                cell.style.animation = 'miss-shake 0.3s ease-in-out';
+                setTimeout(() => { cell.style.animation = ''; }, 300);
+            }
+        }
+
+        let gameMessageTimeout;
+        function showGameMessage(text, color) {
+            clearTimeout(gameMessageTimeout);
+            messageBox.textContent = text; messageBox.style.color = color;
+            gameMessageTimeout = setTimeout(() => { messageBox.textContent = ''; }, 1500);
+        }
+
+        function showRandomFace() {
+            if (!gameActive) return;
+            const availableCells = cells.filter((_, index) => !activeFaces.has(index));
+            if (availableCells.length === 0) return;
+
+            const randomCellIndex = Math.floor(Math.random() * availableCells.length);
+            const cell = availableCells[randomCellIndex];
+            const faceSpan = cell.querySelector('.face');
+            const cellIndex = parseInt(cell.dataset.index);
+
+            let faceType = FACE_TYPE.NORMAL; let emoji = '';
+            const randomValue = Math.random();
+            const { bonusChance, penaltyChance, powerupChance } = currentDifficulty;
+            
+            const lastUnlockedEmojiPack = [...unlockedRewards].reverse().find(r => r.type === 'emoji_pack');
+            currentSillyFaces = lastUnlockedEmojiPack ? lastUnlockedEmojiPack.emojis : baseSillyFaces;
+
+
+            if (randomValue < penaltyChance) {
+                faceType = FACE_TYPE.PENALTY; emoji = penaltyFaceEmoji;
+            } else if (randomValue < penaltyChance + bonusChance) {
+                faceType = FACE_TYPE.BONUS; emoji = bonusFaceEmoji;
+            } else if (randomValue < penaltyChance + bonusChance + powerupChance) {
+                const powerupTypes = [FACE_TYPE.FRENZY, FACE_TYPE.SLOWMO, FACE_TYPE.XPBOOST, FACE_TYPE.TIMEFREEZE];
+                faceType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+                if (faceType === FACE_TYPE.FRENZY) emoji = frenzyFaceEmoji;
+                else if (faceType === FACE_TYPE.SLOWMO) emoji = slowmoFaceEmoji;
+                else if (faceType === FACE_TYPE.XPBOOST) emoji = xpBoostFaceEmoji;
+                else if (faceType === FACE_TYPE.TIMEFREEZE) emoji = timeFreezeEmoji;
+            } else {
+                emoji = currentSillyFaces[Math.floor(Math.random() * currentSillyFaces.length)];
+            }
+
+            faceSpan.className = 'face'; 
+            faceSpan.classList.add(faceType.toLowerCase()); 
+            faceSpan.textContent = emoji;
+            faceSpan.classList.add('active');
+
+            let appearDuration = currentDifficulty.minTime + Math.random() * (currentDifficulty.maxTime - currentDifficulty.minTime);
+            if (slowMoActive) appearDuration *= 1.5; 
+
+            const timeoutId = setTimeout(() => {
+                if (activeFaces.has(cellIndex)) {
+                    faceSpan.classList.remove('active', faceType.toLowerCase());
+                    faceSpan.style.animation = ''; activeFaces.delete(cellIndex);
+                    setTimeout(() => { faceSpan.textContent = ''; }, 100);
+                }
+            }, appearDuration);
+            activeFaces.set(cellIndex, { timeoutId: timeoutId, type: faceType, element: faceSpan });
+        }
+        
+        function activateFrenzyMode() {
+            if (frenzyModeActive) clearTimeout(frenzyTimeoutId); 
+            frenzyModeActive = true;
+            originalFaceInterval = currentDifficulty.interval;
+            clearInterval(faceTimerId); 
+            faceTimerId = setInterval(showRandomFace, originalFaceInterval * 0.5); 
+            activePowerupDisplay.textContent = "FRENZY! 🔥";
+            frenzyTimeoutId = setTimeout(deactivateFrenzyMode, 7000); 
+        }
+        function deactivateFrenzyMode() {
+            frenzyModeActive = false;
+            clearInterval(faceTimerId);
+            if (gameActive) faceTimerId = setInterval(showRandomFace, originalFaceInterval); 
+            activePowerupDisplay.textContent = "";
+        }
+        function activateSlowMoMode() {
+            if (slowMoActive) clearTimeout(slowMoTimeoutId);
+            slowMoActive = true;
+            activePowerupDisplay.textContent = "SLOW-MO 🐢";
+            slowMoTimeoutId = setTimeout(deactivateSlowMoMode, 5000); 
+        }
+        function deactivateSlowMoMode() {
+            slowMoActive = false;
+            activePowerupDisplay.textContent = "";
+        }
+        function activateXPBoost() {
+            if (xpBoostActive) clearTimeout(xpBoostTimeoutId);
+            xpBoostActive = true;
+            activePowerupDisplay.textContent = "XP x2 ✨";
+            xpBoostTimeoutId = setTimeout(deactivateXPBoost, 10000); 
+        }
+        function deactivateXPBoost() {
+            xpBoostActive = false;
+            activePowerupDisplay.textContent = "";
+        }
+        function activateTimeFreeze() {
+            if (timeFreezeActive || !gameActive) return;
+            timeFreezeActive = true;
+            clearInterval(timerId); 
+            activePowerupDisplay.textContent = "FROZEN ❄️";
+            timeFreezeTimeoutId = setTimeout(deactivateTimeFreeze, 3000); 
+        }
+        function deactivateTimeFreeze() {
+            if (!gameActive) return; 
+            timeFreezeActive = false;
+            timerId = setInterval(gameTimerTick, 1000); 
+            activePowerupDisplay.textContent = "";
+        }
+        function resetAllPowerups() {
+            clearTimeout(frenzyTimeoutId); frenzyModeActive = false;
+            clearTimeout(slowMoTimeoutId); slowMoActive = false;
+            clearTimeout(xpBoostTimeoutId); xpBoostActive = false;
+            clearTimeout(timeFreezeTimeoutId); timeFreezeActive = false;
+            activePowerupDisplay.textContent = "";
+            if (faceTimerId && originalFaceInterval && gameActive) { 
+                clearInterval(faceTimerId);
+                faceTimerId = setInterval(showRandomFace, originalFaceInterval);
+            }
+        }
+
+
+        function gameTimerTick() { 
+            timeLeft--;
+            timeLeftDisplay.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        function startGame() {
+            if (!audioInitialized) { interactionOverlay.click(); return; } 
+            if (gameActive) return;
+
+            gameActive = true; score = 0; misses = 0;
+            timeLeft = currentDifficulty.duration;
+            scoreDisplay.textContent = score; timeLeftDisplay.textContent = timeLeft;
+            messageBox.textContent = ''; awesomeWhackerBonusMsg.textContent = '';
+            startButton.disabled = true;
+            playerStats.totalGamesPlayed++;
+            playerStats.difficultyPlays[currentDifficulty.id]++;
+
+            resetAllPowerups(); 
+            activeFaces.forEach(faceData => clearTimeout(faceData.timeoutId)); activeFaces.clear();
+            clearInterval(timerId); clearInterval(faceTimerId);
+
+            cells.forEach(cell => {
+                const faceSpan = cell.querySelector('.face');
+                faceSpan.className = 'face'; faceSpan.textContent = '';
+                cell.style.backgroundColor = 'var(--cell-bg)'; cell.style.animation = '';
+            });
+
+            showScreen('game');
+            timerId = setInterval(gameTimerTick, 1000);
+            originalFaceInterval = currentDifficulty.interval; 
+            faceTimerId = setInterval(showRandomFace, originalFaceInterval);
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerId); clearInterval(faceTimerId);
+            resetAllPowerups();
+            startButton.disabled = false;
+
+            activeFaces.forEach(faceData => clearTimeout(faceData.timeoutId)); activeFaces.clear();
+            clearTimeout(gameMessageTimeout);
+
+            let xpEarned = Math.max(0, Math.floor(score * currentDifficulty.xpMultiplier));
+            if (xpBoostActive) xpEarned *= 2; 
+
+            const scoreThreshold = currentDifficulty.duration * AWESOME_WHACKER_THRESHOLD_MULTIPLIER;
+            if (misses === 0 && score > scoreThreshold) {
+                const bonusXP = Math.floor(xpEarned * 0.5); 
+                xpEarned += bonusXP;
+                awesomeWhackerBonusMsg.textContent = `Awesome Whacker! +${bonusXP} XP Bonus!`;
+            } else {
+                awesomeWhackerBonusMsg.textContent = '';
+            }
+
+            totalXP += xpEarned;
+            playerStats.totalScore += score;
+
+            gameOverMessage.textContent = `Final Score: ${score} (+${xpEarned} XP)`;
+            updateXPDisplay(); 
+            displayRewards(); 
+            displayThemes();  
+            saveData();
+
+            const lowestLeaderboardScore = leaderboard.length < MAX_LEADERBOARD_ENTRIES ? 0 : leaderboard[leaderboard.length - 1].score;
+            if (score > 0 && score >= lowestLeaderboardScore) { 
+                gameOverInput.style.display = 'block'; nameInput.value = ''; nameInput.focus();
+            } else {
+                gameOverInput.style.display = 'none';
+            }
+
+            showScreen('gameover');
+            if(soundEnabled && sfx.end) sfx.end.triggerAttackRelease('C4', '2n');
+            setTimeout(() => cells.forEach(cell => {
+                const faceSpan = cell.querySelector('.face');
+                faceSpan.className = 'face'; faceSpan.textContent = '';
+                cell.style.backgroundColor = 'var(--cell-bg)'; cell.style.animation = '';
+            }), 150);
+        }
+
+        function quitGame() {
+             if (!gameActive) return;
+             gameActive = false; clearInterval(timerId); clearInterval(faceTimerId);
+             resetAllPowerups();
+             activeFaces.forEach(faceData => clearTimeout(faceData.timeoutId)); activeFaces.clear();
+             clearTimeout(gameMessageTimeout); startButton.disabled = false;
+             showScreen('menu');
+        }
+
+        function addScoreToLeaderboard(name, scoreVal) { 
+            leaderboard.push({ name: name.toUpperCase(), score: scoreVal });
+            leaderboard.sort((a, b) => b.score - a.score);
+            leaderboard = leaderboard.slice(0, MAX_LEADERBOARD_ENTRIES);
+            saveData(); displayLeaderboard();
+        }
+        function displayLeaderboard() {
+            leaderboardList.innerHTML = leaderboard.length === 0 ? '<li>No scores yet!</li>' :
+                leaderboard.map((entry, index) => `<li><span>${index + 1}. ${entry.name}</span><span class="score">${entry.score}</span></li>`).join('');
+        }
+        
+        function displayRewards() {
+            rewardsTrackContainer.innerHTML = battlePassTiers.map(tier => {
+                const isAlreadyUnlocked = unlockedRewards.some(r => r.name === tier.name);
+                const canAfford = totalXP >= tier.xpRequired;
+                let statusHTML = '';
+
+                if (isAlreadyUnlocked) {
+                    statusHTML = `<span class="reward-status text-green-500 font-bold">Claimed!</span>`;
+                } else if (canAfford) {
+                    statusHTML = `<button class="claim-reward-button" data-tier-name="${tier.name}">Claim</button>`;
+                } else {
+                    statusHTML = `<span class="reward-status text-xs">(${tier.xpRequired} XP)</span>`;
+                }
+
+                return `<li class="reward-item ${isAlreadyUnlocked ? 'unlocked' : (canAfford ? 'claimable' : 'locked')}">
+                            <span class="reward-name">${tier.name}</span>
+                            ${statusHTML}
+                        </li>`;
+            }).join('');
+            rewardsXpDisplay.textContent = totalXP; 
+
+            document.querySelectorAll('.claim-reward-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    handleClaimReward(e.target.dataset.tierName);
+                });
+            });
+        }
+        
+        function handleClaimReward(tierName) {
+            const tier = battlePassTiers.find(t => t.name === tierName);
+            if (tier && totalXP >= tier.xpRequired && !unlockedRewards.some(r => r.name === tier.name)) {
+                unlockedRewards.push(tier);
+                if (tier.type === 'title') {
+                    currentTitle = tier.name.replace("Title: ", "");
+                    playerTitleDisplay.textContent = `Title: ${currentTitle}`;
+                }
+                if (tier.type === 'emoji_pack') {
+                    currentSillyFaces = [...new Set([...baseSillyFaces, ...tier.emojis])]; 
+                }
+                saveData();
+                displayRewards(); 
+                updateMenuUI();   
+            }
+        }
+        
+        function displayStats() {
+            const avgScore = playerStats.totalGamesPlayed > 0 ? (playerStats.totalScore / playerStats.totalGamesPlayed).toFixed(1) : 0;
+            let mostPlayedDiff = 'None';
+            let maxPlays = 0;
+            for (const diff in playerStats.difficultyPlays) {
+                if (playerStats.difficultyPlays[diff] > maxPlays) {
+                    maxPlays = playerStats.difficultyPlays[diff];
+                    mostPlayedDiff = difficulties[diff].name;
+                }
+            }
+
+            statsListContainer.innerHTML = `
+                <li><span>Total Games Played:</span><span class="stat-value">${playerStats.totalGamesPlayed}</span></li>
+                <li><span>Total Whacks:</span><span class="stat-value">${playerStats.totalWhacks}</span></li>
+                <li><span>Average Score:</span><span class="stat-value">${avgScore}</span></li>
+                <li><span>Total XP Earned:</span><span class="stat-value">${totalXP}</span></li>
+                <li><span>Most Played Difficulty:</span><span class="stat-value">${mostPlayedDiff}</span></li>
+                <li><span>Themes Unlocked:</span><span class="stat-value">${unlockedThemes.length} / ${Object.keys(themes).length}</span></li>
+                <li><span>Rewards Claimed:</span><span class="stat-value">${unlockedRewards.length} / ${battlePassTiers.length}</span></li>
+            `;
+        }
+
+
+        function displayThemes() {
+            themeSelectionContainer.innerHTML = Object.values(themes).map(theme => {
+                const isAlreadyUnlocked = unlockedThemes.includes(theme.id);
+                const canAfford = totalXP >= theme.unlockXP;
+                let buttonHTML;
+
+                if (isAlreadyUnlocked) {
+                    buttonHTML = `<button class="theme-button ${theme.id === selectedTheme ? 'selected' : ''}" data-theme-id="${theme.id}">${theme.name}</button>`;
+                } else if (canAfford) {
+                    buttonHTML = `<button class="unlock-theme-button" data-theme-id="${theme.id}">Unlock ${theme.name} (${theme.unlockXP} XP)</button>`;
+                } else {
+                    buttonHTML = `<button class="theme-button locked" disabled>${theme.name} (${theme.unlockXP} XP)</button>`;
+                }
+                return `<div class="theme-button-container">${buttonHTML}</div>`;
+            }).join('');
+
+            document.querySelectorAll('.theme-button:not(.locked):not(.unlock-theme-button)').forEach(btn => btn.addEventListener('click', () => selectTheme(btn.dataset.themeId)));
+            document.querySelectorAll('.unlock-theme-button').forEach(btn => btn.addEventListener('click', () => handleUnlockTheme(btn.dataset.themeId)));
+            
+            themesXpDisplay.textContent = totalXP; 
+        }
+
+        function handleUnlockTheme(themeId) {
+            const theme = themes[themeId];
+            if (theme && totalXP >= theme.unlockXP && !unlockedThemes.includes(themeId)) {
+                unlockedThemes.push(themeId);
+                saveData();
+                displayThemes(); 
+            }
+        }
+
+
+        function selectTheme(themeId) {
+            if (!unlockedThemes.includes(themeId)) return;
+            selectedTheme = themeId;
+            document.body.className = ''; 
+            if (themes[themeId].className) document.body.classList.add(themes[themeId].className);
+            displayThemes(); 
+            saveData();
+        }
+
+        function selectDifficulty(difficultyId) {
+             if (difficulties[difficultyId]) {
+                 currentDifficulty = difficulties[difficultyId];
+                 difficultyButtons.forEach(btn => {
+                     btn.classList.remove('selected');
+                     if (btn.dataset.difficulty === difficultyId) btn.classList.add('selected');
+                 });
+             }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('whackGameDeluxeData_v4', JSON.stringify({ 
+                    totalXP, leaderboard, unlockedThemes, selectedTheme, unlockedRewards, currentTitle, soundEnabled, playerStats, selectedMusicTrackId
+                }));
+            } catch (e) { console.error("Failed to save data:", e); }
+        }
+        function loadData() {
+            try {
+                const data = JSON.parse(localStorage.getItem('whackGameDeluxeData_v4'));
+                if (data) {
+                    totalXP = data.totalXP || 0; leaderboard = data.leaderboard || [];
+                    unlockedThemes = data.unlockedThemes || ['default']; selectedTheme = data.selectedTheme || 'default';
+                    unlockedRewards = data.unlockedRewards || []; currentTitle = data.currentTitle || "";
+                    soundEnabled = typeof data.soundEnabled === 'boolean' ? data.soundEnabled : true;
+                    playerStats = data.playerStats || { totalGamesPlayed: 0, totalWhacks: 0, totalScore: 0, difficultyPlays: { easy: 0, medium: 0, hard: 0, marathon: 0 }};
+                    selectedMusicTrackId = data.selectedMusicTrackId || 'chillGroove';
+                }
+                 // TEMPORARY: Grant XP for testing
+                 totalXP = 2500; 
+                 console.log("TEMP: XP set to 2500 for testing unlocks.");
+
+            } catch (e) { console.error("Failed to load data:", e); /* Use defaults */ }
+        }
+
+        function setupAnimatedTitle() {
+            const titleText = "Whack-a-Silly-Face Super Deluxe"; 
+            mainTitle.innerHTML = titleText.split('').map((char, i) =>
+                `<span style="animation-delay: ${i * 0.05}s, ${i * 0.07}s;">${char === ' ' ? '&nbsp;' : char}</span>`
+            ).join('');
+        }
+
+        startButton.addEventListener('click', startGame);
+        quitButton.addEventListener('click', quitGame);
+        playAgainButton.addEventListener('click', startGame);
+        submitScoreButton.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (name.length === 3 && /^[a-zA-Z]+$/.test(name)) {
+                addScoreToLeaderboard(name, score); gameOverInput.style.display = 'none';
+            } else { alert('Please enter exactly 3 letters (A-Z).'); nameInput.focus(); }
+        });
+        nameInput.addEventListener('input', () => { nameInput.value = nameInput.value.toUpperCase().replace(/[^A-Z]/g, ''); });
+        difficultyButtons.forEach(button => button.addEventListener('click', () => selectDifficulty(button.dataset.difficulty)));
+        menuButtons.forEach(button => button.addEventListener('click', () => showScreen(button.dataset.screen)));
+        soundToggleButton.addEventListener('click', toggleSound);
+        interactionOverlay.addEventListener('click', initAudio, { once: true });
+
+        function initializeGame() {
+            loadData(); createGrid(); setupAnimatedTitle();
+            if (themes[selectedTheme] && themes[selectedTheme].className) document.body.classList.add(themes[selectedTheme].className);
+            updateMenuUI(); 
+            displayRewards(); 
+            displayThemes();  
+            showScreen('menu');
+            updateSoundButtonText(); 
+        }
+        document.addEventListener('DOMContentLoaded', initializeGame);
+    </script>
+</body>
+</html>
