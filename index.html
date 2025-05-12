@@ -11,7 +11,13 @@
       display:flex; flex-direction:column; align-items:center;
       padding:2rem; background:#f5f5f5;
     }
-    #menu h1 { margin-bottom:1rem; }
+    #menu h1 { margin-bottom:0.5rem; }
+    #disclaimer {
+      max-width:600px; margin-bottom:1.5rem;
+      font-size:0.9rem; color:#555; line-height:1.4;
+      background:#fff; padding:1rem; border-radius:4px;
+      border:1px solid #ddd;
+    }
     #menu ul { list-style:none; padding:0; }
     #menu li { margin:0.5rem 0; }
     #menu a {
@@ -39,6 +45,15 @@
   <!-- ▶️ Game Menu -->
   <div id="menu">
     <h1>🎮 My Gemini 2.5 Pro I/O May 2025 Games</h1>
+
+    <div id="disclaimer">
+      <strong>Disclaimer:</strong><br>
+      This repo is a collection of games Gemini 2.5 Pro (preview) I/O 05-12-25 Edition and I have collaborated on after a couple of hours each.  
+      The goal of this repo is to identify the current abilities of SOTA AI in low-friction creation of functional coding projects, like simple web games.  
+      Each game was coded entirely with Gemini through my prompting and suggestions.<br><br>
+      The games are likely full of bugs and are more proof-of-concept as to the current status of AI than functioning games or a demonstration of my personal skill.
+    </div>
+
     <ul>
       <li><a href="sudoku.html">Sudoku</a></li>
       <li><a href="whack-a-mole.html">Super Duper Whack-A-Moji</a></li>
