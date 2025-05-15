@@ -28,6 +28,8 @@
             --block-stroke-color: #222222;
             --highscore-bg: #34495e;
             --highscore-entry-bg: #1f2a38;
+            --hard-drop-button-bg: #c0392b; /* Dark red for slam */
+            --hard-drop-button-shadow: #a52a20;
         }
 
         body {
@@ -161,12 +163,21 @@
         }
 
         .control-button.rotate { grid-column: span 3; }
+        .control-button.hard-drop {
+            grid-column: span 3;
+            background-color: var(--hard-drop-button-bg);
+            box-shadow: 0 4px 0 var(--hard-drop-button-shadow);
+        }
+        .control-button.hard-drop:active {
+            box-shadow: 0 2px 0 var(--hard-drop-button-shadow);
+        }
         .control-button.start {
             grid-column: span 3;
             background-color: var(--start-button-bg);
             box-shadow: 0 4px 0 var(--start-button-shadow);
         }
         .control-button.start:active { box-shadow: 0 2px 0 var(--start-button-shadow); }
+
 
         .message-box, .initials-prompt {
             position: fixed;
@@ -318,10 +329,9 @@
 
         <div class="controls-container">
             <button class="control-button" id="leftBtn">←</button>
-            <button class="control-button" id="downBtn">↓</button>
-            <button class="control-button" id="rightBtn">→</button>
+            <button class="control-button" id="downBtn">↓</button> <button class="control-button" id="rightBtn">→</button>
             <button class="control-button rotate" id="rotateBtn">Rotate ↑</button>
-            <button class="control-button start" id="startBtn">Start Game</button>
+            <button class="control-button hard-drop" id="hardDropBtn">Slam ↓↓</button> <button class="control-button start" id="startBtn">Start Game</button>
         </div>
 
         <div class="highscore-section">
@@ -354,8 +364,9 @@
         const startBtn = document.getElementById('startBtn');
         const leftBtn = document.getElementById('leftBtn');
         const rightBtn = document.getElementById('rightBtn');
-        const downBtn = document.getElementById('downBtn');
+        const downBtn = document.getElementById('downBtn'); // Soft drop button
         const rotateBtn = document.getElementById('rotateBtn');
+        const hardDropBtn = document.getElementById('hardDropBtn'); // Hard drop button
         const messageBox = document.getElementById('messageBox');
         const messageText = document.getElementById('messageText');
         const messageBtn = document.getElementById('messageBtn');
@@ -381,7 +392,7 @@
 
         // Game State
         let board, currentPiece, nextPiece, score, level, linesCleared, dropCounter, dropInterval, lastTime;
-        let animationFrameId = null; // Initialize to null
+        let animationFrameId = null;
         let gamePaused = true;
         let gameOver = false;
         let highScores = [];
@@ -393,18 +404,18 @@
         const tapTimeThreshold = 250;
         let touchstartTime = 0;
         let dragMode = null;
-        let pieceStartXOnTouch = 0;
-        let lastMoveX = 0;
-        let lastMoveY = 0;
-        const dragStartThreshold = 16;
+        let initialPieceXForDrag = 0;
+        let lastDropYForDrag = 0;
+        const dragStartThreshold = 20; // Increased slightly
+        const DRAG_VERTICAL_SENSITIVITY_FACTOR = 0.5;
 
-        // Color Themes (collapsed for brevity)
+        // Color Themes (collapsed)
         const themes = [
-            { score: 0, name: "Classic Dark", colors: { bodyBg: '#1a1a2e', textColor: '#e0e1dd', titleColor: '#f4a261', titleShadow: '#e76f51', containerBg: '#2c3e50', containerBorder: '#4a4e69', canvasBorder: '#9a8c98', infoPanelBg: '#34495e', infoTextBg: '#1f2a38', infoHighlight: '#f1c40f', btnBg: '#e76f51', btnShadow: '#c25a40', startBtnBg: '#2a9d8f', startBtnShadow: '#21867a', msgBoxBg: 'rgba(44, 62, 80, 0.97)', msgBoxBorder: '#f4a261', highScoreBg: '#34495e', highScoreEntryBg: '#1f2a38'}},
-            { score: 2500, name: "Ocean Blue", colors: { bodyBg: '#0d47a1', textColor: '#bbdefb', titleColor: '#64b5f6', titleShadow: '#2196f3', containerBg: '#1565c0', containerBorder: '#1e88e5', canvasBorder: '#90caf9', infoPanelBg: '#1976d2', infoTextBg: '#0d47a1', infoHighlight: '#yellow', btnBg: '#2196f3', btnShadow: '#1976d2', startBtnBg: '#4caf50', startBtnShadow: '#388e3c', msgBoxBg: 'rgba(21, 101, 192, 0.97)', msgBoxBorder: '#64b5f6', highScoreBg: '#1976d2', highScoreEntryBg: '#0d47a1'}},
-            { score: 7500, name: "Sunset Orange", colors: { bodyBg: '#d84315', textColor: '#ffccbc', titleColor: '#ff8a65', titleShadow: '#ff7043', containerBg: '#e64a19', containerBorder: '#f4511e', canvasBorder: '#ffab91', infoPanelBg: '#f4511e', infoTextBg: '#bf360c', infoHighlight: '#fff176', btnBg: '#ff7043', btnShadow: '#e64a19', startBtnBg: '#8d6e63', startBtnShadow: '#6d4c41', msgBoxBg: 'rgba(230, 74, 25, 0.97)', msgBoxBorder: '#ff8a65', highScoreBg: '#f4511e', highScoreEntryBg: '#bf360c'}},
-            { score: 15000, name: "Forest Green", colors: { bodyBg: '#1b5e20', textColor: '#c8e6c9', titleColor: '#66bb6a', titleShadow: '#4caf50', containerBg: '#2e7d32', containerBorder: '#388e3c', canvasBorder: '#a5d6a7', infoPanelBg: '#388e3c', infoTextBg: '#1b5e20', infoHighlight: '#fff59d', btnBg: '#4caf50', btnShadow: '#388e3c', startBtnBg: '#795548', startBtnShadow: '#5d4037', msgBoxBg: 'rgba(46, 125, 50, 0.97)', msgBoxBorder: '#66bb6a', highScoreBg: '#388e3c', highScoreEntryBg: '#1b5e20'}},
-            { score: 30000, name: "Royal Purple", colors: { bodyBg: '#311b92', textColor: '#d1c4e9', titleColor: '#9575cd', titleShadow: '#7e57c2', containerBg: '#4527a0', containerBorder: '#512da8', canvasBorder: '#b39ddb', infoPanelBg: '#512da8', infoTextBg: '#311b92', infoHighlight: '#ede7f6', btnBg: '#7e57c2', btnShadow: '#5e35b1', startBtnBg: '#607d8b', startBtnShadow: '#455a64', msgBoxBg: 'rgba(69, 39, 160, 0.97)', msgBoxBorder: '#9575cd', highScoreBg: '#512da8', highScoreEntryBg: '#311b92'}}
+            { score: 0, name: "Classic Dark", colors: { bodyBg: '#1a1a2e', textColor: '#e0e1dd', titleColor: '#f4a261', titleShadow: '#e76f51', containerBg: '#2c3e50', containerBorder: '#4a4e69', canvasBorder: '#9a8c98', infoPanelBg: '#34495e', infoTextBg: '#1f2a38', infoHighlight: '#f1c40f', btnBg: '#e76f51', btnShadow: '#c25a40', startBtnBg: '#2a9d8f', startBtnShadow: '#21867a', msgBoxBg: 'rgba(44, 62, 80, 0.97)', msgBoxBorder: '#f4a261', highScoreBg: '#34495e', highScoreEntryBg: '#1f2a38', hardDropBtnBg: '#c0392b', hardDropBtnShadow: '#a52a20'}},
+            { score: 2500, name: "Ocean Blue", colors: { bodyBg: '#0d47a1', textColor: '#bbdefb', titleColor: '#64b5f6', titleShadow: '#2196f3', containerBg: '#1565c0', containerBorder: '#1e88e5', canvasBorder: '#90caf9', infoPanelBg: '#1976d2', infoTextBg: '#0d47a1', infoHighlight: '#yellow', btnBg: '#2196f3', btnShadow: '#1976d2', startBtnBg: '#4caf50', startBtnShadow: '#388e3c', msgBoxBg: 'rgba(21, 101, 192, 0.97)', msgBoxBorder: '#64b5f6', highScoreBg: '#1976d2', highScoreEntryBg: '#0d47a1', hardDropBtnBg: '#d32f2f', hardDropBtnShadow: '#b71c1c'}},
+            { score: 7500, name: "Sunset Orange", colors: { bodyBg: '#d84315', textColor: '#ffccbc', titleColor: '#ff8a65', titleShadow: '#ff7043', containerBg: '#e64a19', containerBorder: '#f4511e', canvasBorder: '#ffab91', infoPanelBg: '#f4511e', infoTextBg: '#bf360c', infoHighlight: '#fff176', btnBg: '#ff7043', btnShadow: '#e64a19', startBtnBg: '#8d6e63', startBtnShadow: '#6d4c41', msgBoxBg: 'rgba(230, 74, 25, 0.97)', msgBoxBorder: '#ff8a65', highScoreBg: '#f4511e', highScoreEntryBg: '#bf360c', hardDropBtnBg: '#e64a19', hardDropBtnShadow: '#d84315'}},
+            { score: 15000, name: "Forest Green", colors: { bodyBg: '#1b5e20', textColor: '#c8e6c9', titleColor: '#66bb6a', titleShadow: '#4caf50', containerBg: '#2e7d32', containerBorder: '#388e3c', canvasBorder: '#a5d6a7', infoPanelBg: '#388e3c', infoTextBg: '#1b5e20', infoHighlight: '#fff59d', btnBg: '#4caf50', btnShadow: '#388e3c', startBtnBg: '#795548', startBtnShadow: '#5d4037', msgBoxBg: 'rgba(46, 125, 50, 0.97)', msgBoxBorder: '#66bb6a', highScoreBg: '#388e3c', highScoreEntryBg: '#1b5e20', hardDropBtnBg: '#2e7d32', hardDropBtnShadow: '#1b5e20'}},
+            { score: 30000, name: "Royal Purple", colors: { bodyBg: '#311b92', textColor: '#d1c4e9', titleColor: '#9575cd', titleShadow: '#7e57c2', containerBg: '#4527a0', containerBorder: '#512da8', canvasBorder: '#b39ddb', infoPanelBg: '#512da8', infoTextBg: '#311b92', infoHighlight: '#ede7f6', btnBg: '#7e57c2', btnShadow: '#5e35b1', startBtnBg: '#607d8b', startBtnShadow: '#455a64', msgBoxBg: 'rgba(69, 39, 160, 0.97)', msgBoxBorder: '#9575cd', highScoreBg: '#512da8', highScoreEntryBg: '#311b92', hardDropBtnBg: '#512da8', hardDropBtnShadow: '#4527a0'}}
         ];
         let currentTheme = themes[0];
 
@@ -412,9 +423,12 @@
             currentTheme = theme;
             const root = document.documentElement;
             Object.keys(theme.colors).forEach(key => {
-                root.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, theme.colors[key]);
+                // Construct CSS variable name, e.g., bodyBg -> --body-bg
+                const cssVarName = `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+                root.style.setProperty(cssVarName, theme.colors[key]);
             });
         }
+
 
         function updateThemeBasedOnScore() {
             let newTheme = themes[0];
@@ -457,7 +471,7 @@
 
         function resetGame() {
             board = createBoard(); score = 0; level = 1; linesCleared = 0; dropInterval = 1000;
-            dropCounter = 0; // Ensure drop counter is reset for a new game
+            dropCounter = 0;
 
             gameOver = false; gamePaused = false;
             currentPiece = getRandomPiece(); nextPiece = getRandomPiece();
@@ -517,6 +531,8 @@
             if (gamePaused || gameOver || !currentPiece) return;
             if (isValidMove(currentPiece, dx, dy)) { currentPiece.x += dx; currentPiece.y += dy; }
         }
+
+        // Soft drop (called by button or swipe/drag down)
         function pieceDrop() {
             if (gamePaused || gameOver || !currentPiece) return;
             if (isValidMove(currentPiece, 0, 1)) { currentPiece.y++; }
@@ -524,15 +540,25 @@
                 lockPiece(); removeCompletedLines(); currentPiece = nextPiece; nextPiece = getRandomPiece(); drawNextPiece();
                 if (!isValidMove(currentPiece)) {
                     gameOver = true; gamePaused = true;
-                    if (animationFrameId !== null) {
-                        cancelAnimationFrame(animationFrameId);
-                        animationFrameId = null;
-                    }
+                    if (animationFrameId !== null) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
                     checkHighScore(); updateStartButton();
                 }
             }
-            dropCounter = 0;
+            dropCounter = 0; // Reset auto-drop counter
         }
+
+        // Hard drop (slam piece down)
+        function hardDrop() {
+            if (gamePaused || gameOver || !currentPiece) return;
+            while (isValidMove(currentPiece, 0, 1)) {
+                currentPiece.y++;
+                score += 2; // Optional: small score bonus for hard drop
+            }
+            updateScoreDisplay(); // Update score if bonus is given
+            pieceDrop(); // This will then lock the piece and continue game flow
+        }
+
+
         function lockPiece() {
             if (!currentPiece) return;
             currentPiece.shape.forEach((row, r) => row.forEach((value, c) => {
@@ -596,15 +622,12 @@
 
         function gameLoop(currentTime = 0) {
             if (gameOver && gamePaused) {
-                if (animationFrameId !== null) {
-                    cancelAnimationFrame(animationFrameId);
-                    animationFrameId = null;
-                }
+                if (animationFrameId !== null) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
                 return;
             }
             if (!gamePaused) {
                 const deltaTime = currentTime - lastTime; lastTime = currentTime; dropCounter += deltaTime;
-                if (dropCounter > dropInterval) pieceDrop();
+                if (dropCounter > dropInterval) pieceDrop(); // Auto-drop
             }
             drawBoard(); drawPiece(currentPiece);
             animationFrameId = requestAnimationFrame(gameLoop);
@@ -614,10 +637,7 @@
             try {
                 const storedScores = localStorage.getItem('tetrisHighScoresDeluxe');
                 highScores = storedScores ? JSON.parse(storedScores) : [];
-            } catch (error) {
-                console.error("Error loading high scores:", error);
-                highScores = [];
-            }
+            } catch (error) { console.error("Error loading high scores:", error); highScores = []; }
             displayHighScores();
         }
         function saveHighScore(initials, newScore) {
@@ -652,10 +672,12 @@
             }
         });
 
+        // --- Button Event Listeners ---
         leftBtn.addEventListener('click', () => movePiece(-1, 0));
         rightBtn.addEventListener('click', () => movePiece(1, 0));
-        downBtn.addEventListener('click', () => pieceDrop());
+        downBtn.addEventListener('click', () => pieceDrop()); // Soft drop
         rotateBtn.addEventListener('click', () => attemptRotate());
+        hardDropBtn.addEventListener('click', () => hardDrop()); // Hard drop
         startBtn.addEventListener('click', () => { if (gameOver) resetGame(); else togglePause(); });
         messageBtn.addEventListener('click', hideMessage);
 
@@ -663,84 +685,106 @@
             if (gameOver) return;
             gamePaused = !gamePaused;
             if (gamePaused) {
-                if (animationFrameId !== null) {
-                    cancelAnimationFrame(animationFrameId);
-                    animationFrameId = null;
-                }
+                if (animationFrameId !== null) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
                 showMessage("Paused", "Resume", togglePause);
             } else {
                 hideMessage();
                 lastTime = performance.now();
-                if (animationFrameId === null && currentPiece && !gameOver) {
-                    gameLoop();
-                }
+                if (animationFrameId === null && currentPiece && !gameOver) { gameLoop(); }
             }
             updateStartButton();
         }
 
+        // --- Touch Controls ---
         canvas.addEventListener('touchstart', (e) => {
             if (gamePaused || gameOver || !currentPiece) return;
             e.preventDefault();
-            touchstartX = e.changedTouches[0].screenX; touchstartY = e.changedTouches[0].screenY;
-            touchstartTime = Date.now(); dragMode = null;
-            if (currentPiece) { pieceStartXOnTouch = currentPiece.x; }
-            lastMoveX = touchstartX; lastMoveY = touchstartY;
+            touchstartX = e.changedTouches[0].screenX;
+            touchstartY = e.changedTouches[0].screenY;
+            touchstartTime = Date.now();
+            dragMode = null;
+            if (currentPiece) {
+                initialPieceXForDrag = currentPiece.x;
+            }
+            lastDropYForDrag = touchstartY;
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             if (gamePaused || gameOver || !currentPiece || e.changedTouches.length === 0) return;
             e.preventDefault();
-            const currentX = e.changedTouches[0].screenX; const currentY = e.changedTouches[0].screenY;
-            const rawDeltaXFromStart = currentX - touchstartX; const rawDeltaYFromStart = currentY - touchstartY;
+
+            const currentX = e.changedTouches[0].screenX;
+            const currentY = e.changedTouches[0].screenY;
+            const totalDeltaX = currentX - touchstartX;
+            const totalDeltaY = currentY - touchstartY;
 
             if (dragMode === null) {
-                if (Math.abs(rawDeltaXFromStart) > dragStartThreshold || Math.abs(rawDeltaYFromStart) > dragStartThreshold) {
-                    dragMode = (Math.abs(rawDeltaXFromStart) > Math.abs(rawDeltaYFromStart)) ? 'horizontal' : 'vertical';
-                    lastMoveX = currentX;
-                    lastMoveY = currentY;
+                if (Math.abs(totalDeltaX) > dragStartThreshold || Math.abs(totalDeltaY) > dragStartThreshold) {
+                    if (Math.abs(totalDeltaX) > Math.abs(totalDeltaY)) {
+                        dragMode = 'horizontal';
+                        // Capture the piece's X when horizontal drag *officially starts*
+                        if(currentPiece) initialPieceXForDrag = currentPiece.x;
+                    } else {
+                        dragMode = 'vertical';
+                        lastDropYForDrag = touchstartY; // Initialize for the first segment of vertical drag
+                    }
                 }
             }
-            if (dragMode === 'horizontal') {
-                const incrementalDeltaX = currentX - lastMoveX;
-                if (Math.abs(incrementalDeltaX) > BLOCK_SIZE * 0.3) { // Adjusted sensitivity
-                    movePiece(incrementalDeltaX > 0 ? 1 : -1, 0);
-                    lastMoveX = currentX;
+
+            if (dragMode === 'horizontal' && currentPiece) {
+                const targetColOffset = Math.round(totalDeltaX / BLOCK_SIZE);
+                const intendedPieceX = initialPieceXForDrag + targetColOffset;
+
+                if (intendedPieceX < currentPiece.x) {
+                    movePiece(-1, 0);
+                } else if (intendedPieceX > currentPiece.x) {
+                    movePiece(1, 0);
                 }
-            } else if (dragMode === 'vertical') {
-                const incrementalDeltaY = currentY - lastMoveY;
-                if (incrementalDeltaY > BLOCK_SIZE * 0.3) { // Adjusted sensitivity
+            } else if (dragMode === 'vertical' && currentPiece) {
+                if (currentY - lastDropYForDrag > BLOCK_SIZE * DRAG_VERTICAL_SENSITIVITY_FACTOR) {
                     pieceDrop();
-                    lastMoveY = currentY;
+                    lastDropYForDrag = currentY;
                 }
             }
         }, { passive: false });
 
         canvas.addEventListener('touchend', (e) => {
             if (gamePaused || gameOver || e.changedTouches.length === 0) return;
-            if (dragMode !== null) {
-                dragMode = null;
+
+            const wasDragging = dragMode !== null;
+            dragMode = null; // Reset for the next touch sequence
+
+            if (wasDragging) {
+                // If a drag was in progress, its actions were handled in touchmove.
+                // We don't want to also interpret this as a tap or swipe.
                 return;
             }
+
+            // If it was not a drag, then it's a tap or a short swipe.
             touchendX = e.changedTouches[0].screenX;
             touchendY = e.changedTouches[0].screenY;
             handleSwipeOrTap();
         }, { passive: false });
 
         function handleSwipeOrTap() {
-            const deltaX = touchendX - touchstartX; const deltaY = touchendY - touchstartY;
+            const deltaX = touchendX - touchstartX;
+            const deltaY = touchendY - touchstartY;
             const elapsedTime = Date.now() - touchstartTime;
 
+            // Check for Tap
             if (Math.abs(deltaX) < tapThreshold && Math.abs(deltaY) < tapThreshold && elapsedTime < tapTimeThreshold) {
                 attemptRotate();
                 return;
             }
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+
+            // Check for Swipe (only if not a tap and not a drag)
+            if (Math.abs(deltaX) > Math.abs(deltaY)) { // Horizontal swipe
                 if (Math.abs(deltaX) > swipeThreshold) {
                     movePiece(deltaX > 0 ? 1 : -1, 0);
                 }
-            } else {
+            } else { // Vertical swipe
                 if (deltaY > swipeThreshold) {
-                    pieceDrop();
+                    pieceDrop(); // Soft drop for swipe down
                 }
             }
         }
