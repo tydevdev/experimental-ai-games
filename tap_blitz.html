@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Tap Blitz! - Evolved</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #1a202c;
+            --container-bg-color: #2d3748;
+            --text-color: #e2e8f0;
+            --primary-accent-color: #63b3ed;
+            --secondary-accent-color: #f6e05e; /* Yellow for score/time */
+            --game-area-bg: #4a5568;
+            --game-area-border: #718096;
+            --target-bg-color: #f56565;
+            --target-border-color: #c53030;
+            --bonus-target-bg-color: #f6e05e; /* Yellow for bonus */
+            --bonus-target-border-color: #d69e2e;
+            --button-bg-color: #48bb78;
+            --button-border-color: #2f855a;
+            --button-hover-bg-color: #38a169;
+            --button-text-color: white;
+            --miss-flash-color: #c53030;
+            --font-family: 'Press Start 2P', cursive;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        /* Screen visibility */
+        .screen {
+            display: none; /* Hidden by default */
+            background-color: var(--container-bg-color);
+            /* padding: 20px; Adjusted for gameScreenContainer specifically */
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            width: 100%;
+        }
+        #homeScreen, #themesScreen { /* Default padding for menu screens */
+            padding: 20px;
+        }
+        #gameScreenContainer { /* Specific padding for game screen to accommodate pause button */
+            padding: 60px 20px 20px 20px; /* top, right, bottom, left */
+            position: relative; /* For absolute positioning of the pause button */
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Common Menu Styles */
+        .menu-title {
+            font-size: clamp(1.8rem, 6vw, 2.5rem);
+            color: var(--primary-accent-color);
+            margin-bottom: 25px;
+            text-shadow: 2px 2px #2c5282;
+        }
+        .menu-button { /* This is the base style for most buttons */
+            font-family: var(--font-family);
+            background-color: var(--button-bg-color);
+            color: var(--button-text-color);
+            border: none;
+            padding: 12px 20px;
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-bottom: 4px solid var(--button-border-color);
+            width: 80%;
+            max-width: 300px;
+            margin-bottom: 15px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .menu-button:hover:not(:disabled) {
+            background-color: var(--button-hover-bg-color);
+        }
+        .menu-button:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+            border-bottom-width: 2px;
+        }
+        .menu-button:disabled {
+            background-color: #a0aec0; 
+            border-bottom-color: #718096;
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .secondary-button {
+            background-color: #a0aec0;
+            border-bottom-color: #718096;
+        }
+        .secondary-button:hover:not(:disabled) {
+            background-color: #718096;
+        }
+
+
+        /* Home Screen Specific */
+        #homeScreen .high-score-display {
+            font-size: clamp(1rem, 4vw, 1.25rem);
+            color: var(--secondary-accent-color);
+            margin-bottom: 20px;
+        }
+
+        /* Themes Screen Specific */
+        .theme-option-button {
+            background-color: var(--game-area-bg); 
+            border-bottom-color: var(--game-area-border);
+        }
+        .theme-option-button.active-theme {
+            background-color: var(--primary-accent-color) !important;
+            color: var(--button-text-color) !important;
+            border-bottom-color: #2c5282 !important;
+        }
+
+
+        /* Game Screen Styles */
+        .game-header {
+            margin-bottom: 15px;
+            /* No margin-top needed here as parent padding handles space */
+        }
+        /* .game-title can be used if a title is added back to game screen header */
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+            margin-bottom: 10px;
+        }
+        .score-display, .timer-display, .combo-display {
+            color: var(--text-color);
+        }
+        #scoreValue, #timeLeft, #comboValue { /* comboValue is the span for the number */
+            color: var(--secondary-accent-color);
+            font-weight: bold;
+        }
+        .game-area {
+            width: 100%;
+            height: 280px;
+            background-color: var(--game-area-bg);
+            border: 3px solid var(--game-area-border);
+            border-radius: 12px;
+            position: relative;
+            cursor: crosshair;
+            overflow: hidden;
+            margin-bottom: 15px;
+            transition: background-color 0.1s ease-out;
+        }
+        .game-area.miss {
+            background-color: var(--miss-flash-color) !important;
+        }
+        #target {
+            width: 45px;
+            height: 45px;
+            background-color: var(--target-bg-color);
+            border: 2px solid var(--target-border-color);
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+            transition: background-color 0.1s ease, transform 0.05s ease-out, top 0.1s ease-out, left 0.1s ease-out, width 0.1s ease-out, height 0.1s ease-out;
+            display: flex; 
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+        }
+        #target.bonus-target {
+            background-color: var(--bonus-target-bg-color);
+            border-color: var(--bonus-target-border-color);
+            box-shadow: 0 0 15px var(--bonus-target-bg-color);
+        }
+        #target:active {
+            transform: scale(0.90) !important;
+        }
+        .game-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        #gameStartButton {
+            /* Uses .menu-button styles */
+        }
+        #playAgainButton {
+            /* Uses .menu-button styles */
+            background-color: #ed8936; /* Orange */
+            border-bottom-color: #c05621;
+            display: none; /* Initially hidden */
+        }
+         #playAgainButton:hover:not(:disabled) {
+            background-color: #dd6b20;
+        }
+
+        .message-box {
+            display: none;
+            color: var(--secondary-accent-color);
+            font-size: clamp(1rem, 4vw, 1.25rem);
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: rgba(0,0,0,0.4);
+            border-radius: 8px;
+        }
+
+        #pauseButton {
+            position: absolute;
+            top: 10px; /* Adjusted for new padding */
+            right: 10px; /* Adjusted for new padding */
+            background-color: var(--secondary-accent-color) !important;
+            color: var(--container-bg-color) !important;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem; 
+            line-height: 40px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 100;
+            display: none; 
+        }
+        #pauseOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.75); 
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        #pauseOverlay .menu-title { font-size: 2rem; margin-bottom: 20px; }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="homeScreen" class="screen active">
+            <h1 class="menu-title">Tap Blitz!</h1>
+            <p class="high-score-display">High Score: <span id="homeHighScore">0</span></p>
+            <button id="navigateToGameButton" class="menu-button">Play Game</button>
+            <button id="navigateToThemesButton" class="menu-button">Themes</button>
+        </div>
+
+        <div id="themesScreen" class="screen">
+            <h1 class="menu-title">Select Theme</h1>
+            <button class="theme-option-button menu-button" data-theme="default-dark">Default Dark</button>
+            <button class="theme-option-button menu-button" data-theme="light-mode">Light Mode</button>
+            <button class="theme-option-button menu-button" data-theme="forest">Forest</button>
+            <button class="theme-option-button menu-button" data-theme="ocean">Ocean</button>
+            <button id="backToHomeButton" class="menu-button secondary-button">Back to Home</button>
+        </div>
+
+        <div id="gameScreenContainer" class="screen">
+            <button id="pauseButton" title="Pause Game">❚❚</button>
+            <div class="game-header">
+                <div class="stats-container">
+                    <p class="score-display">Score: <span id="scoreValue">0</span></p>
+                    <p class="timer-display">Time: <span id="timeLeft">30</span>s</p>
+                    <p class="combo-display">Combo: <span id="comboValue">0</span>x</p> </div>
+            </div>
+
+            <div id="gameArea" class="game-area">
+                <div id="target" style="display: none;"></div> </div>
+
+            <div id="gameMessage" class="message-box">Game Over!</div>
+
+            <div class="game-controls">
+                <button id="gameStartButton" class="menu-button">Start Game</button>
+                <button id="playAgainButton" class="menu-button">Play Again?</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pauseOverlay">
+        <h1 class="menu-title">Paused</h1>
+        <button id="resumeGameButton" class="menu-button">Resume</button>
+        <button id="quitToHomeButton" class="menu-button secondary-button">Quit to Home</button>
+    </div>
+
+
+    <script>
+        // --- DOM Elements ---
+        const homeScreen = document.getElementById('homeScreen');
+        const themesScreen = document.getElementById('themesScreen');
+        const gameScreenContainer = document.getElementById('gameScreenContainer');
+        const allScreens = document.querySelectorAll('.screen');
+
+        const navigateToGameButton = document.getElementById('navigateToGameButton');
+        const navigateToThemesButton = document.getElementById('navigateToThemesButton');
+        const backToHomeButton = document.getElementById('backToHomeButton');
+        const themeOptionButtons = document.querySelectorAll('.theme-option-button');
+
+        const gameArea = document.getElementById('gameArea');
+        const target = document.getElementById('target');
+        const scoreDisplay = document.getElementById('scoreValue');
+        const timeLeftDisplay = document.getElementById('timeLeft');
+        const comboValueDisplay = document.getElementById('comboValue'); // Corrected variable name for the span
+        const homeHighScoreDisplay = document.getElementById('homeHighScore');
+
+        const gameStartButton = document.getElementById('gameStartButton');
+        const playAgainButton = document.getElementById('playAgainButton');
+        const gameMessage = document.getElementById('gameMessage');
+
+        const pauseButton = document.getElementById('pauseButton');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const resumeGameButton = document.getElementById('resumeGameButton');
+        const quitToHomeButton = document.getElementById('quitToHomeButton');
+
+
+        // --- Game State Variables ---
+        let score = 0;
+        let timeLeft = 30; 
+        let gameTimerId;
+        let gameStarted = false;
+        let gamePaused = false;
+        let currentCombo = 0;
+        let highScore = 0;
+        let missStreak = 0;
+
+        const INITIAL_TIME = 30;
+        const MISS_PENALTY_SECONDS = 1;
+        const BONUS_TARGET_CHANCE = 0.15;
+        const BONUS_TIME_ADD = 3;
+        const BASE_TARGET_SIZE = 45;
+        const MIN_TARGET_SIZE = 25;
+        const TARGET_SHRINK_PER_COMBO = 1;
+
+        // --- Sound Effects (Tone.js) ---
+        let soundsEnabled = false;
+        let hitSynth, missSynth, bonusSynth, clickSynth, gameOverSynth;
+
+        function initSounds() {
+            if (soundsEnabled || Tone.context.state === 'running') return; 
+            Tone.start().then(() => {
+                hitSynth = new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.1 } }).toDestination();
+                missSynth = new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.02, decay: 0.2, sustain: 0, release: 0.1 }, volume: -10 }).toDestination();
+                bonusSynth = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.2 }, volume: -5 }).toDestination();
+                clickSynth = new Tone.PluckSynth({ attackNoise: 1, dampening: 4000, resonance: 0.7, release: 0.5, volume: -12 }).toDestination();
+                gameOverSynth = new Tone.Synth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.1, decay: 0.5, sustain: 0, release: 0.1 }, volume: -8 }).toDestination();
+                soundsEnabled = true;
+                console.log("Sounds initialized and audio context running.");
+            }).catch(e => console.error("Error starting Tone.js audio context:", e));
+        }
+        
+        function playSound(type) {
+            if (!soundsEnabled) return;
+            try {
+                const now = Tone.now();
+                if (type === 'hit' && hitSynth) hitSynth.triggerAttackRelease("C5", "8n", now);
+                else if (type === 'miss' && missSynth) missSynth.triggerAttackRelease("C3", "8n", now);
+                else if (type === 'bonus' && bonusSynth) bonusSynth.triggerAttackRelease("G5", "4n", now);
+                else if (type === 'click' && clickSynth) clickSynth.triggerAttackRelease("C4", "16n", now);
+                else if (type === 'gameOver' && gameOverSynth) gameOverSynth.triggerAttackRelease("F3", "2n", now);
+            } catch (e) {
+                console.error("Sound play error for type", type, ":", e);
+            }
+        }
+
+        // --- Screen Navigation ---
+        function showScreen(screenId) {
+            allScreens.forEach(screen => screen.classList.remove('active'));
+            const nextScreen = document.getElementById(screenId);
+            if (nextScreen) {
+                nextScreen.classList.add('active');
+            }
+            playSound('click'); 
+        }
+
+        navigateToGameButton.addEventListener('click', () => {
+            initSounds(); 
+            showScreen('gameScreenContainer');
+            prepareNewGame(); 
+        });
+        navigateToThemesButton.addEventListener('click', () => {
+            initSounds();
+            showScreen('themesScreen');
+            updateActiveThemeButtonUI();
+        });
+        backToHomeButton.addEventListener('click', () => showScreen('homeScreen'));
+
+        // --- Theming ---
+        const themes = { // Theme definitions (same as before)
+            'default-dark': { '--bg-color': '#1a202c', '--container-bg-color': '#2d3748', '--text-color': '#e2e8f0', '--primary-accent-color': '#63b3ed', '--secondary-accent-color': '#f6e05e', '--game-area-bg': '#4a5568', '--game-area-border': '#718096', '--target-bg-color': '#f56565', '--target-border-color': '#c53030', '--bonus-target-bg-color': '#f6e05e', '--bonus-target-border-color': '#d69e2e', '--button-bg-color': '#48bb78', '--button-border-color': '#2f855a', '--button-hover-bg-color': '#38a169', },
+            'light-mode': { '--bg-color': '#f7fafc', '--container-bg-color': '#ffffff', '--text-color': '#2d3748', '--primary-accent-color': '#4299e1', '--secondary-accent-color': '#f59e0b', '--game-area-bg': '#e2e8f0', '--game-area-border': '#cbd5e0', '--target-bg-color': '#ef4444', '--target-border-color': '#b91c1c', '--bonus-target-bg-color': '#f59e0b', '--bonus-target-border-color': '#b45309', '--button-bg-color': '#38a169', '--button-border-color': '#276749', '--button-hover-bg-color': '#2f855a', },
+            'forest': { '--bg-color': '#2f3e46', '--container-bg-color': '#354f52', '--text-color': '#cad2c5', '--primary-accent-color': '#84a98c', '--secondary-accent-color': '#dad7cd', '--game-area-bg': '#52796f', '--game-area-border': '#84a98c', '--target-bg-color': '#ef476f', '--target-border-color': '#c22551', '--bonus-target-bg-color': '#ffd166', '--bonus-target-border-color': '#e0ac43', '--button-bg-color': '#84a98c', '--button-border-color': '#52796f', '--button-hover-bg-color': '#6a9579', },
+            'ocean': { '--bg-color': '#006994', '--container-bg-color': '#0077b6', '--text-color': '#ade8f4', '--primary-accent-color': '#90e0ef', '--secondary-accent-color': '#ffda6c', '--game-area-bg': '#0096c7', '--game-area-border': '#48cae4', '--target-bg-color': '#ff6b6b', '--target-border-color': '#d94848', '--bonus-target-bg-color': '#ffda6c', '--bonus-target-border-color': '#e6b840', '--button-bg-color': '#00b4d8', '--button-border-color': '#0077b6', '--button-hover-bg-color': '#0096c7', }
+        };
+
+        function applyTheme(themeName) {
+            const selectedTheme = themes[themeName];
+            if (!selectedTheme) { console.warn("Theme not found:", themeName); return; }
+            for (const [property, value] of Object.entries(selectedTheme)) {
+                document.documentElement.style.setProperty(property, value);
+            }
+            localStorage.setItem('tapBlitzTheme', themeName);
+            updateActiveThemeButtonUI(themeName);
+        }
+        
+        function updateActiveThemeButtonUI(activeThemeName = localStorage.getItem('tapBlitzTheme') || 'default-dark') {
+            themeOptionButtons.forEach(btn => {
+                btn.classList.remove('active-theme');
+                if (btn.dataset.theme === activeThemeName) {
+                    btn.classList.add('active-theme');
+                }
+            });
+        }
+
+        themeOptionButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                playSound('click'); 
+                applyTheme(button.dataset.theme);
+            });
+        });
+
+        function loadSavedTheme() {
+            const savedTheme = localStorage.getItem('tapBlitzTheme') || 'default-dark';
+            applyTheme(savedTheme);
+        }
+
+        // --- High Score ---
+        function loadHighScore() {
+            highScore = parseInt(localStorage.getItem('tapBlitzHighScore')) || 0;
+            homeHighScoreDisplay.textContent = highScore;
+        }
+        function saveHighScore() {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('tapBlitzHighScore', highScore);
+                homeHighScoreDisplay.textContent = highScore;
+            }
+        }
+
+        // --- Game Logic ---
+        function prepareNewGame() {
+            score = 0;
+            currentCombo = 0;
+            missStreak = 0;
+            timeLeft = INITIAL_TIME;
+            updateScoreDisplay();
+            updateTimeDisplay();
+            updateComboDisplay(); // Call to set initial combo text
+            target.className = ''; 
+            target.style.width = BASE_TARGET_SIZE + 'px';
+            target.style.height = BASE_TARGET_SIZE + 'px';
+            
+            gameMessage.style.display = 'none';
+            playAgainButton.style.display = 'none';
+            gameStartButton.style.display = 'block';
+            gameStartButton.disabled = false;
+            gameStartButton.textContent = "Start Game";
+            target.style.display = 'none';
+            pauseButton.style.display = 'none';
+            gamePaused = false; 
+            pauseOverlay.style.display = 'none'; 
+            if(gameTimerId) clearInterval(gameTimerId); 
+            console.log("New game prepared.");
+        }
+
+        function startGame() {
+            if (gamePaused) { // Resuming game
+                gamePaused = false;
+                pauseOverlay.style.display = 'none';
+                pauseButton.textContent = "❚❚";
+                target.style.display = 'flex'; 
+                gameTimerId = setInterval(countdown, 1000);
+                console.log("Game resumed.");
+                return;
+            }
+
+            if (gameStarted && !gamePaused) return; // Already running, not paused
+
+            prepareNewGame(); 
+            gameStarted = true; 
+
+            gameStartButton.disabled = true;
+            gameStartButton.textContent = "Game On!";
+            pauseButton.style.display = 'block';
+            pauseButton.textContent = "❚❚";
+
+            target.style.display = 'flex';
+            spawnNewTarget(); 
+            
+            gameTimerId = setInterval(countdown, 1000);
+            console.log("Game started! Timer ID:", gameTimerId);
+        }
+
+        function countdown() {
+            if (!gameStarted || gamePaused) return; 
+            timeLeft--;
+            updateTimeDisplay();
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        function togglePauseGame() {
+            if (!gameStarted) return; 
+            playSound('click');
+
+            if (gamePaused) { 
+                startGame(); 
+            } else { 
+                gamePaused = true;
+                clearInterval(gameTimerId);
+                pauseOverlay.style.display = 'flex';
+                pauseButton.textContent = "▶"; 
+                target.style.display = 'none'; 
+                console.log("Game paused.");
+            }
+        }
+        
+        resumeGameButton.addEventListener('click', togglePauseGame);
+        quitToHomeButton.addEventListener('click', () => {
+            if(gameTimerId) clearInterval(gameTimerId);
+            gameStarted = false;
+            gamePaused = false; 
+            pauseOverlay.style.display = 'none'; 
+            endGame(true); 
+            showScreen('homeScreen');
+        });
+
+
+        function endGame(wasQuit = false) {
+            if(gameTimerId) clearInterval(gameTimerId); 
+            gameStarted = false;
+            gamePaused = false; 
+            target.style.display = 'none';
+            pauseButton.style.display = 'none'; 
+
+            if (!wasQuit) {
+                saveHighScore();
+                gameMessage.textContent = `Game Over! Final Score: ${score}. High Score: ${highScore}`;
+                playSound('gameOver');
+            } else {
+                gameMessage.textContent = 'Game Quit.';
+            }
+            
+            gameMessage.style.display = 'block';
+            gameStartButton.style.display = 'none'; 
+            playAgainButton.style.display = 'block'; 
+            console.log("Game ended. Final score:", score, "Was quit:", wasQuit);
+        }
+
+        function playAgain() { 
+            playSound('click');
+            prepareNewGame();
+        }
+
+        function spawnNewTarget() {
+            moveTarget();
+            target.className = ''; 
+            if (Math.random() < BONUS_TARGET_CHANCE) {
+                target.classList.add('bonus-target');
+            }
+            const newSize = Math.max(MIN_TARGET_SIZE, BASE_TARGET_SIZE - (currentCombo * TARGET_SHRINK_PER_COMBO));
+            target.style.width = newSize + 'px';
+            target.style.height = newSize + 'px';
+        }
+
+        function moveTarget() { // Same as before
+            if (!gameStarted || gamePaused) return;
+            const gameAreaWidth = gameArea.clientWidth;
+            const gameAreaHeight = gameArea.clientHeight;
+            const targetWidth = parseInt(target.style.width) || target.offsetWidth || BASE_TARGET_SIZE;
+            const targetHeight = parseInt(target.style.height) || target.offsetHeight || BASE_TARGET_SIZE;
+            const buffer = 10;
+            const maxX = Math.max(buffer, gameAreaWidth - targetWidth - buffer);
+            const maxY = Math.max(buffer, gameAreaHeight - targetHeight - buffer);
+            let randomX = Math.floor(Math.random() * (maxX - buffer)) + buffer; 
+            let randomY = Math.floor(Math.random() * (maxY - buffer)) + buffer;
+            target.style.left = randomX + 'px';
+            target.style.top = randomY + 'px';
+        }
+
+        function updateScoreDisplay() { scoreDisplay.textContent = score; }
+        function updateTimeDisplay() { timeLeftDisplay.textContent = Math.max(0, timeLeft); }
+        function updateComboDisplay() { 
+            comboValueDisplay.textContent = currentCombo; // FIX: Only set the number
+        }
+
+        function handleTargetHit(event) { // Same as before, but calls corrected updateComboDisplay
+            event.stopPropagation(); 
+            if (!gameStarted || gamePaused || timeLeft <= 0) return;
+
+            let pointsEarned = 10;
+            currentCombo++;
+            missStreak = 0;
+            pointsEarned += currentCombo * 2;
+
+            if (target.classList.contains('bonus-target')) {
+                timeLeft += BONUS_TIME_ADD;
+                pointsEarned += 20;
+                playSound('bonus');
+                target.classList.remove('bonus-target');
+            } else {
+                playSound('hit');
+            }
+            
+            score += pointsEarned;
+
+            updateScoreDisplay();
+            updateComboDisplay(); // This will now correctly update the combo number
+            updateTimeDisplay();
+            spawnNewTarget();
+
+            target.style.transform = 'scale(0.90)';
+            setTimeout(() => { if (target) target.style.transform = 'scale(1)'; }, 60);
+        }
+
+        target.addEventListener('click', handleTargetHit);
+        target.addEventListener('touchstart', (event) => {
+            event.preventDefault(); 
+            handleTargetHit(event); 
+        }, { passive: false }); 
+
+        function handleMiss(event) { // Same as before, but calls corrected updateComboDisplay
+            if (event.target === target || (target && target.contains(event.target))) return; 
+            if (!gameStarted || gamePaused || timeLeft <= 0) return;
+
+            currentCombo = 0;
+            missStreak++;
+            updateComboDisplay(); // This will now correctly update the combo number
+            target.style.width = BASE_TARGET_SIZE + 'px'; 
+            target.style.height = BASE_TARGET_SIZE + 'px';
+
+            timeLeft -= MISS_PENALTY_SECONDS;
+            updateTimeDisplay();
+            playSound('miss');
+            
+            gameArea.classList.add('miss');
+            setTimeout(() => gameArea.classList.remove('miss'), 100);
+
+            if (timeLeft <= 0) {
+                timeLeft = 0; 
+                updateTimeDisplay();
+                endGame();
+            }
+        }
+
+        gameArea.addEventListener('click', handleMiss);
+        gameArea.addEventListener('touchstart', (event) => {
+            if (event.target === target || (target && target.contains(event.target))) return;
+            event.preventDefault(); 
+            handleMiss(event);
+        }, { passive: false });
+
+        gameStartButton.addEventListener('click', () => { playSound('click'); startGame(); });
+        playAgainButton.addEventListener('click', playAgain); 
+        pauseButton.addEventListener('click', togglePauseGame); 
+
+        // --- Initial Setup ---
+        window.onload = () => {
+            loadSavedTheme();
+            loadHighScore();
+            showScreen('homeScreen'); 
+            console.log("Game ready. Welcome to Tap Blitz Evolved! (Fixed v2)");
+        };
+
+        window.addEventListener('resize', () => {
+            if (gameStarted && !gamePaused) {
+                moveTarget(); 
+            }
+        });
+
+    </script>
+</body>
+</html>
