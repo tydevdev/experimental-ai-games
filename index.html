@@ -55,14 +55,14 @@
     </div>
 
     <ul>
-      <li><a href="sudoku.html">Sudoku</a></li>
-      <li><a href="whack-a-mole.html">Super Duper Whack-A-Moji</a></li>
-      <li><a href="tap_blitz.html">Tap Blitz!</a></li>
-      <li><a href="doodle_dash.html">Doodle Dash</a></li>
-      <li><a href="tetris.html">Tetris</a></li>
-      <li><a href="duck_council.html">Duck Council</a></li>
-      <li><a href="fruit_fusion">Fruit Fusion</a></li>
-      <!-- …add one <li> per .html game file -->
+      <li><a href="sudoku/">Sudoku</a></li>
+      <li><a href="whack-a-mole/">Super Duper Whack-A-Moji</a></li>
+      <li><a href="tap-blitz/">Tap Blitz!</a></li>
+      <li><a href="doodle-dash/">Doodle Dash</a></li>
+      <li><a href="tetris/">Tetris</a></li>
+      <li><a href="duck-council/">Duck Council</a></li>
+      <li><a href="fruit-fusion/">Fruit Fusion</a></li>
+      <!-- …add one <li> per game-folder -->
     </ul>
   </div>
 
@@ -73,26 +73,34 @@
   </div>
 
   <script>
-    const menu       = document.getElementById('menu');
-    const container  = document.getElementById('gameContainer');
-    const frame      = document.getElementById('gameFrame');
-    const backBtn    = document.getElementById('backButton');
+    const menu      = document.getElementById('menu');
+    const container = document.getElementById('gameContainer');
+    const frame     = document.getElementById('gameFrame');
+    const backBtn   = document.getElementById('backButton');
 
-    // When you click a game link…
+    // Attach click-handlers to every <a> in the menu
     menu.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', e => {
         e.preventDefault();
-        frame.src = link.getAttribute('href');     // load the .html
-        menu.style.display = 'none';               // hide menu
-        container.style.display = 'block';         // show iframe
+
+        let href = link.getAttribute('href');
+        // If it’s a folder URL (no “.html”), normalize to “folder/index.html”
+        if (!href.endsWith('.html')) {
+          if (!href.endsWith('/')) href += '/';
+          href += 'index.html';
+        }
+
+        frame.src               = href;    // load the actual HTML file
+        menu.style.display      = 'none';
+        container.style.display = 'block';
       });
     });
 
-    // Back to menu
+    // “← Back to Menu”
     backBtn.addEventListener('click', () => {
-      frame.src = '';          // unload game
+      frame.src               = '';      // unload the game
       container.style.display = 'none';
-      menu.style.display = 'flex';
+      menu.style.display      = 'flex';
     });
   </script>
 
