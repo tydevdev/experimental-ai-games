@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Duck Council of Fates</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Creepster&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark blue-gray */
+            color: #e2e8f0; /* Light gray */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .council-header {
+            font-family: 'Creepster', cursive;
+            font-size: 3rem; /* 48px */
+            color: #fbd38d; /* Pale orange/gold */
+            text-shadow: 2px 2px #c05621; /* Darker orange */
+            margin-bottom: 1rem;
+        }
+        .council-subheader {
+            font-size: 1.125rem; /* 18px */
+            color: #a0aec0; /* Medium gray */
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .input-area, .fate-area {
+            background-color: #2d3748; /* Darker gray */
+            padding: 2rem;
+            border-radius: 0.75rem; /* 12px */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 2rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #cbd5e0; /* Lighter gray */
+        }
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.375rem; /* 6px */
+            border: 1px solid #4a5568; /* Gray border */
+            background-color: #1a202c; /* Dark blue-gray */
+            color: #e2e8f0; /* Light gray */
+            min-height: 100px;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #fbd38d; /* Pale orange/gold */
+            box-shadow: 0 0 0 3px rgba(251, 211, 141, 0.5);
+        }
+        button {
+            background-color: #dd6b20; /* Orange */
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem; /* 6px */
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: block;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        button:hover {
+            background-color: #c05621; /* Darker orange */
+        }
+        button:disabled {
+            background-color: #718096; /* Gray for disabled */
+            cursor: not-allowed;
+        }
+        .fate-display {
+            margin-top: 1rem;
+            padding: 1.5rem;
+            background-color: #1a202c; /* Dark blue-gray */
+            border-radius: 0.375rem; /* 6px */
+            border: 1px dashed #4a5568; /* Dashed gray border */
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-style: italic;
+            color: #fbd38d; /* Pale orange/gold */
+        }
+        .duck-icon {
+            font-size: 3rem; /* 48px */
+            margin-right: 0.5rem;
+            display: inline-block;
+            animation: subtle-bob 2s ease-in-out infinite;
+        }
+        @keyframes subtle-bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .footer-text {
+            margin-top: auto; /* Pushes footer to the bottom */
+            padding-top: 2rem;
+            font-size: 0.875rem; /* 14px */
+            color: #718096; /* Medium gray */
+            text-align: center;
+        }
+        /* Message box for errors or loading */
+        .message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #c05621; /* Darker orange */
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="text-center mb-8">
+        <div>
+            <span class="duck-icon" role="img" aria-label="Duck icon">🦆</span>
+        </div>
+        <h1 class="council-header">The Duck Council of Fates</h1>
+        <p class="council-subheader">Tremble before their feathered judgment! Ask your question, if you dare...</p>
+    </header>
+
+    <div class="input-area">
+        <label for="userQuestion">Your Humble (or Impudent) Question:</label>
+        <textarea id="userQuestion" rows="4" placeholder="e.g., Will I find my missing sock? Should I eat that week-old quackamole?"></textarea>
+        <button id="submitButton">Submit to the Council's Deliberation</button>
+    </div>
+
+    <div class="fate-area">
+        <h2 class="text-xl font-semibold mb-2 text-center text-amber-400">The Council's Decree:</h2>
+        <div id="fateDisplay" class="fate-display">
+            The council pond is still... awaiting your query.
+        </div>
+    </div>
+
+    <div id="messageBox" class="message-box">This is a message!</div>
+
+    <footer class="footer-text">
+        <p>&copy; <span id="currentYear"></span> Quacktastic Judgements Inc. All rights reserved (mostly by ducks).</p>
+    </footer>
+
+    <script>
+        // Get current year for footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // DOM Elements
+        const userQuestionInput = document.getElementById('userQuestion');
+        const submitButton = document.getElementById('submitButton');
+        const fateDisplay = document.getElementById('fateDisplay');
+        const messageBox = document.getElementById('messageBox');
+
+        // Array of ominous and funny duck-themed fates
+        const fates = [
+            "The Council has quacked. Your future involves... an alarming surplus of breadcrumbs. Use them wisely, or face the crumbs of consequence.",
+            "A shiver runs down the High Duck's spine. Prepare for... slightly damp socks. Forever. And a mysterious craving for pondweed.",
+            "The ancient scrolls of quack-fu have been consulted. Your destiny is... to find a surprisingly good parking spot, but a pigeon will immediately defile your car.",
+            "Silence in the council chamber... followed by a single, judgmental 'Quack.' This can't be good. Expect... minor inconveniences, aggressively delivered by various waterfowl.",
+            "The Council decrees: Your next meal will be... suspiciously delicious. Don't ask about the secret ingredient. It's probably duck.",
+            "A feather falls. A decision is made. You will soon... misplace your keys in a place so obvious, it's insulting. A duck will be watching, silently judging.",
+            "The pond of premonition ripples. It shows... a lifetime of stepping on LEGOs. Barefoot. While being chased by a goose.",
+            "The Council has spoken through the sacred Rubber Ducky. Your path leads to... an existential crisis about the meaning of 'squeak', and a sudden urge to float aimlessly.",
+            "Beware the Ides of Mallard! For you shall... forget what you came into a room for. Repeatedly. Each time, a distant quack will mock your confusion.",
+            "The shadows in the reeds whisper your name. They say... you're due for a software update at the worst possible moment, and your ringtone will change to 'Disco Duck'.",
+            "The Council finds your query... *interesting*. Your reward is an endless loop of that one song you hate, performed by a barbershop quartet of ducks.",
+            "A ripple of unease disturbs the council pond. Your fate is sealed... with a slightly sticky substance, possibly old jam or ectoplasm. Good luck.",
+            "The Quacken has been released! ...to tell you that you'll run out of milk tomorrow morning, and the only replacement will be duck milk. It's an acquired taste.",
+            "By the power vested in this council of webbed feet, you are hereby sentenced to... an uncanny ability to attract pigeons, who will try to sell you tiny timeshares.",
+            "The sacred breadcrumb has crumbled. This foretells... a sudden, inexplicable craving for algae and the ability to understand what geese are *really* saying about you.",
+            "The Council's verdict is in: you will achieve greatness, but only in a very specific, slightly embarrassing niche. Like competitive duck calling.",
+            "A spectral mallard appears! It hovers, then solemnly informs you that your Wi-Fi password will be changed to 'Qu@ck$tronom1c!' by mischievous duck spirits.",
+            "The waters stir. The prophecy is clear: you will be haunted by the faint, persistent smell of wet dog... or perhaps, damp duck.",
+            "The Council has peered into the murky depths of your future. It's... mostly just murky. But with more ducks than you'd expect. And one of them owes you money.",
+            "Your plea has been heard. The Council grants you... the uncanny ability to find loose change, but only pennies, and only when you're already late."
+        ];
+
+        // Function to display messages (replaces alert)
+        function showMessage(message, type = 'info') {
+            messageBox.textContent = message;
+            if (type === 'error') {
+                messageBox.style.backgroundColor = '#c53030'; // Red for error
+            } else if (type === 'success') {
+                messageBox.style.backgroundColor = '#2f855a'; // Green for success
+            } else {
+                messageBox.style.backgroundColor = '#dd6b20'; // Default orange
+            }
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 3000); // Hide after 3 seconds
+        }
+
+        // Event listener for the submit button
+        submitButton.addEventListener('click', () => {
+            const question = userQuestionInput.value.trim();
+
+            // Validate if the question is not empty
+            if (!question) {
+                showMessage('The Council demands a question, mortal!', 'error');
+                fateDisplay.textContent = "The void echoes with your silence... Ask something!";
+                fateDisplay.style.color = "#fc8181"; // Reddish color for error
+                return;
+            }
+
+            // Disable button and show loading state
+            submitButton.disabled = true;
+            submitButton.textContent = 'The Council Deliberates...';
+            fateDisplay.textContent = 'Quacks and whispers fill the chamber...';
+            fateDisplay.style.color = "#fbd38d"; // Back to default gold
+
+            // Simulate deliberation
+            setTimeout(() => {
+                // Select a random fate
+                const randomIndex = Math.floor(Math.random() * fates.length);
+                const chosenFate = fates[randomIndex];
+
+                // Display the chosen fate
+                fateDisplay.textContent = chosenFate;
+
+                // Re-enable button and reset text
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit to the Council\'s Deliberation';
+                userQuestionInput.value = ''; // Clear the input field
+            }, 2500); // Simulate a 2.5 second deliberation
+        });
+
+        // Optional: Allow pressing Enter in textarea to submit
+        userQuestionInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) { // Enter submits, Shift+Enter for new line
+                event.preventDefault(); // Prevent new line
+                submitButton.click(); // Trigger button click
+            }
+        });
+
+    </script>
+</body>
+</html>
