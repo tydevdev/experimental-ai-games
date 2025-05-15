@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Fusion Fun - Deluxe</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient-start: #7f7fd5;
+            --bg-gradient-mid1: #86a8e7;
+            --bg-gradient-mid2: #91eae4;
+            --bg-gradient-end: #7f7fd5; 
+            --text-color-main: #333;
+            --text-color-light: #fff;
+            --accent-color-1: #34495e; 
+            --accent-color-2: #e74c3c; 
+            --accent-color-2-hover: #c0392b;
+            --score-color: #27ae60;
+            --highscore-color: #2980b9;
+            --container-bg: rgba(255, 255, 255, 0.97);
+            --canvas-bg: #f0f4f8; 
+            --canvas-border: #d0d9e0; 
+            --wall-color: #b0bec5;   
+            --info-bar-item-bg: #ffffff;
+            --danger-line-color: rgba(255, 0, 0, 0.6); 
+            --drop-assist-color: rgba(0, 0, 0, 0.15); 
+            --button-active-bg: #5cb85c;
+            --button-active-hover-bg: #4cae4c;
+            --button-secondary-bg: #7f8c8d;
+            --button-secondary-hover-bg: #606f70;
+            --popup-text-color: var(--accent-color-2); /* For score popups */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-mid1), var(--bg-gradient-mid2), var(--bg-gradient-end));
+            background-size: 300% 300%;
+            animation: gradientShift 20s ease infinite alternate; 
+            color: var(--text-color-main);
+            overflow-x: hidden;
+            transition: background 0.5s ease;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .screen { display: none; }
+        .screen.active { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            width: 100%; 
+            padding: 10px; 
+            box-sizing: border-box;
+        }
+
+        .container-base { 
+            background-color: var(--container-bg);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15), 0 3px 8px rgba(0,0,0,0.1); 
+            max-width: 400px; 
+            width: 90%;    
+            text-align: center;
+            margin-top: 20px; 
+            margin-bottom: 20px;
+        }
+        
+        h1, h2 {
+            color: var(--accent-color-1);
+            margin-top: 0;
+            margin-bottom: 20px; 
+        }
+        h1 { font-size: 2.4em; font-weight: 700; } 
+        h2 { font-size: 2em; font-weight: 600; } 
+
+        .button, button {
+            padding: 12px 22px; 
+            font-size: 1em;   
+            font-weight: 600;
+            background-color: var(--accent-color-2);
+            color: var(--text-color-light);
+            border: none;
+            border-radius: 10px; 
+            cursor: pointer;
+            margin: 10px 5px; 
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            text-transform: uppercase;
+            min-width: 140px; 
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button:hover, button:hover {
+            background-color: var(--accent-color-2-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .button-secondary {
+            background-color: var(--button-secondary-bg);
+        }
+        .button-secondary:hover {
+            background-color: var(--button-secondary-hover-bg);
+        }
+        .button.active, button.active { 
+            background-color: var(--button-active-bg);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .button.active:hover, button.active:hover {
+            background-color: var(--button-active-hover-bg);
+        }
+
+        /* Game Specific UI */
+        .info-bar {
+            display: flex;
+            justify-content: space-between; 
+            align-items: center;
+            width: 100%;
+            max-width: 350px;
+            margin: 0 auto 15px auto; 
+            font-size: 0.95em; 
+        }
+        .info-bar div {
+            background-color: var(--info-bar-item-bg);
+            padding: 8px 12px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            text-align: center;
+            color: var(--text-color-main); 
+            margin: 0 4px; 
+            flex-basis: 0; 
+            flex-grow: 1;
+        }
+        .info-bar div:first-child { margin-left: 0; }
+        .info-bar div:last-child { margin-right: 0; }
+
+        #score-value { font-weight: 700; color: var(--score-color); font-size: 1.1em; }
+        #high-score-value { font-weight: 700; color: var(--highscore-color); font-size: 1.1em;}
+        
+        .next-fruit-queue-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px; 
+            padding: 5px 0; 
+        }
+        .next-fruit-queue-display span { font-size: 0.85em; color: #555; } 
+        .fruit-emoji-ui { font-size: 1.4em; } 
+        #current-aim-emoji { font-weight: bold; transform: scale(1.15); } 
+
+
+        #game-canvas-wrapper {
+            width: 350px;
+            height: 450px;
+            background-color: var(--canvas-bg);
+            border: 3px solid var(--canvas-border);
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden; 
+            margin: 0 auto 15px auto; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        
+        #game-over-screen, #initials-prompt-screen, #pause-screen {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.85); 
+            color: var(--text-color-light);
+            display: none; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 100;
+            border-radius: 12px; 
+            padding: 25px;
+        }
+        #game-over-screen h2, #initials-prompt-screen h2, #pause-screen h2 { 
+            margin-top: 0; font-size: 2.2em; color: var(--text-color-light); margin-bottom: 15px;
+        }
+        #game-over-screen p, #initials-prompt-screen p { font-size: 1.3em; margin-bottom: 20px; }
+        
+        #initials-input {
+            padding: 12px;
+            font-size: 1.3em;
+            width: 100px;
+            text-align: center;
+            margin: 15px 0 20px 0;
+            border-radius: 8px;
+            border: 2px solid var(--accent-color-2);
+            text-transform: uppercase;
+            background-color: #fff;
+            color: var(--text-color-main);
+        }
+
+        #leaderboard-list {
+            list-style: none;
+            padding: 0;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+        #leaderboard-list li {
+            background-color: var(--info-bar-item-bg);
+            color: var(--text-color-main);
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+        #leaderboard-list li .rank { font-weight: 700; margin-right: 15px; color: var(--accent-color-1); }
+        #leaderboard-list li .initials { flex-grow: 1; text-align: left; margin-left: 10px; font-weight: 600; }
+        #leaderboard-list li .score { font-weight: 700; color: var(--score-color); }
+
+        .theme-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .theme-button {
+            padding: 12px 18px;
+            border: 3px solid transparent;
+            min-width: 130px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .theme-button.active {
+            border-color: var(--accent-color-1);
+            box-shadow: 0 0 12px var(--accent-color-1);
+            transform: translateY(-1px);
+        }
+
+        #aiming-fruit-preview {
+            position: absolute; 
+            opacity: 0.65; 
+            pointer-events: none; 
+            z-index: 50; 
+            display: flex; 
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%; 
+            /* transform: scale(0.8); */ /* Temporarily managed by JS for debugging */
+            /* transition: transform 0.2s ease-out, opacity 0.2s ease-out; */ /* Temporarily managed by JS for debugging */
+             /* border: 2px solid lime !important; */ /* Optional: for visual debugging of the div */
+        }
+        #aiming-fruit-preview.show { /* This class might be temporarily unused if JS sets styles directly */
+            transform: scale(1);
+            opacity: 0.65;
+        }
+
+        #combo-text-display, .score-popup-text {
+            position: absolute;
+            font-weight: 700;
+            color: var(--popup-text-color); 
+            text-shadow: 
+                1px 1px 0 var(--text-color-light), -1px -1px 0 var(--text-color-light), 
+                1px -1px 0 var(--text-color-light), -1px 1px 0 var(--text-color-light),
+                0 0 8px rgba(0,0,0,0.3); 
+            opacity: 0;
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            z-index: 60;
+            pointer-events: none;
+        }
+        #combo-text-display {
+            top: 100px; 
+            left: 50%;
+            transform: translateX(-50%) scale(0.8); 
+            font-size: 2.5em;
+        }
+        #combo-text-display.show {
+            opacity: 1;
+            transform: translateX(-50%) scale(1.1);
+        }
+        .score-popup-text {
+            font-size: 1.5em; 
+        }
+
+
+        .game-controls-bar {
+            display: flex;
+            justify-content: center;
+            gap: 8px; 
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .game-controls-bar .button {
+            min-width: 100px; 
+            padding: 8px 15px;
+            font-size: 0.8em;
+        }
+        .game-controls-info {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 10px;
+        }
+        #sound-prompt {
+            font-size: 0.9em;
+            color: var(--accent-color-1);
+            background-color: rgba(255,255,255,0.8);
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: none; 
+        }
+
+        #custom-alert-overlay {
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.6); 
+            z-index: 2000; 
+            justify-content: center; 
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        #custom-alert-box {
+            background-color: var(--container-bg); 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2); 
+            text-align: center; 
+            max-width: 320px;
+            width: 100%;
+            color: var(--text-color-main);
+        }
+        #custom-alert-message { 
+            margin-bottom: 25px; 
+            font-size: 1.15em; 
+            line-height: 1.5;
+        }
+        #custom-alert-ok-button {
+            min-width: 100px;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="main-menu-screen" class="screen active container-base">
+        <h1>Fruit Fusion Fun</h1>
+        <button id="start-game-button" class="button">Play Game</button>
+        <button id="leaderboard-button" class="button">Leaderboard</button>
+        <button id="themes-button" class="button">Themes</button>
+        <div id="sound-prompt">Click anywhere to enable sound!</div>
+    </div>
+
+    <div id="game-screen" class="screen container-base">
+        <div class="info-bar">
+            <div>Score: <span id="score-value">0</span></div>
+            <div>High Score: <span id="high-score-value">0</span></div>
+            <div class="next-fruit-queue-display">
+                <span>Aim:</span><span id="current-aim-emoji" class="fruit-emoji-ui"></span>
+                <span>Next:</span><span id="next-in-queue-emoji" class="fruit-emoji-ui"></span>
+            </div>
+        </div>
+        <div id="game-canvas-wrapper">
+            <div id="aiming-fruit-preview"></div> 
+            <div id="combo-text-display"></div>
+            <div id="game-over-screen">
+                <h2>Game Over!</h2>
+                <p>Final Score: <span id="final-score-value">0</span></p>
+                <button id="restart-game-button-gameover" class="button">Play Again</button>
+                <button id="main-menu-button-gameover" class="button button-secondary">Main Menu</button>
+            </div>
+            <div id="initials-prompt-screen">
+                <h2>New High Score!</h2>
+                <p>Enter your initials (3 letters):</p>
+                <input type="text" id="initials-input" maxlength="3">
+                <button id="submit-initials-button" class="button">Submit</button>
+            </div>
+            <div id="pause-screen">
+                <h2>Paused</h2>
+                <button id="resume-game-button" class="button">Resume</button>
+                <button id="main-menu-button-pause" class="button button-secondary">Main Menu</button>
+            </div>
+        </div>
+        <div class="game-controls-bar">
+            <button id="pause-game-button" class="button">Pause</button>
+            <button id="toggle-sound-button" class="button">Sound: On</button>
+            <button id="toggle-difficulty-button" class="button">Normal G</button>
+        </div>
+        <div class="game-controls-info">Move to Aim, Click to Drop</div>
+    </div>
+
+    <div id="leaderboard-screen" class="screen container-base">
+        <h2>Leaderboard</h2>
+        <ol id="leaderboard-list"></ol>
+        <button id="main-menu-button-leaderboard" class="button button-secondary">Main Menu</button>
+    </div>
+
+    <div id="themes-screen" class="screen container-base">
+        <h2>Select Theme</h2>
+        <div class="theme-options"></div>
+        <button id="main-menu-button-themes" class="button button-secondary">Main Menu</button>
+    </div>
+
+    <div id="custom-alert-overlay">
+        <div id="custom-alert-box">
+            <p id="custom-alert-message"></p>
+            <button id="custom-alert-ok-button" class="button">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Matter.js modules
+        const { Engine, Render, Runner, World, Bodies, Composite, Events, Body } = Matter;
+
+        // --- Game Configuration ---
+        const BASE_FRUITS_DATA_STRUCTURE = [ 
+            { id: 0, name: 'Cherry',      radius: 18, emoji: '🍒', points: 1,  nextId: 1 },
+            { id: 1, name: 'Strawberry',  radius: 21, emoji: '🍓', points: 3,  nextId: 2 },
+            { id: 2, name: 'Grape',       radius: 26, emoji: '🍇', points: 6,  nextId: 3 },
+            { id: 3, name: 'OrangeSlice', radius: 30, emoji: '🍊', points: 10, nextId: 4 },
+            { id: 4, name: 'Apple',       radius: 40, emoji: '🍎', points: 21, nextId: 5 },
+            { id: 5, name: 'Pear',        radius: 46, emoji: '🍐', points: 28, nextId: 6 },
+            { id: 6, name: 'Watermelon',  radius: 56, emoji: '🍉', points: 36, nextId: null },
+        ];
+
+        const THEMES = {
+            default: {
+                name: "Default",
+                bgGradientStart: "#7f7fd5", bgGradientMid1: "#86a8e7", bgGradientMid2: "#91eae4", bgGradientEnd: "#7f7fd5",
+                textColorMain: "#333", textColorLight: "#fff",
+                accentColor1: "#34495e", accentColor2: "#e74c3c", accentColor2Hover: "#c0392b",
+                scoreColor: "#27ae60", highscoreColor: "#2980b9", popupTextColor: "#e74c3c",
+                containerBg: "rgba(255, 255, 255, 0.97)", canvasBg: "#f0f4f8", canvasBorder: "#d0d9e0",
+                wallColor: "#b0bec5", infoBarItemBg: "#ffffff",
+                dangerLineColor: "rgba(255,0,0,0.6)", dropAssistColor: "rgba(0,0,0,0.15)",
+                buttonActiveBg: "#5cb85c", buttonActiveHoverBg: "#4cae4c", buttonSecondaryBg: "#7f8c8d", buttonSecondaryHoverBg: "#606f70",
+                fruits: BASE_FRUITS_DATA_STRUCTURE.map(fruit => ({...fruit, color: getDefaultFruitColor(fruit.id)}))
+            },
+            sunset: {
+                name: "Sunset",
+                bgGradientStart: "#FF7E5F", bgGradientMid1: "#FEB47B", bgGradientMid2: "#FF7E5F", bgGradientEnd: "#FFC371",
+                textColorMain: "#4A4A4A", textColorLight: "#fff",
+                accentColor1: "#D35400", accentColor2: "#E67E22", accentColor2Hover: "#D35400",
+                scoreColor: "#2ECC71", highscoreColor: "#3498DB", popupTextColor: "#E67E22",
+                containerBg: "rgba(255, 250, 240, 0.97)", canvasBg: "#FFF8DC", canvasBorder: "#F0E68C",
+                wallColor: "#D2B48C", infoBarItemBg: "#FFF5EE",
+                dangerLineColor: "rgba(255,69,0,0.6)", dropAssistColor: "rgba(70,70,70,0.2)",
+                buttonActiveBg: "#FFA500", buttonActiveHoverBg: "#FF8C00",buttonSecondaryBg: "#B08D57", buttonSecondaryHoverBg: "#9A7B4F",
+                fruits: [ 
+                    { ...BASE_FRUITS_DATA_STRUCTURE[0], color: '#FF6347'}, { ...BASE_FRUITS_DATA_STRUCTURE[1], color: '#FF4500'},
+                    { ...BASE_FRUITS_DATA_STRUCTURE[2], color: '#CD5C5C'}, { ...BASE_FRUITS_DATA_STRUCTURE[3], color: '#FFA07A'},
+                    { ...BASE_FRUITS_DATA_STRUCTURE[4], color: '#FA8072'}, { ...BASE_FRUITS_DATA_STRUCTURE[5], color: '#E9967A'},
+                    { ...BASE_FRUITS_DATA_STRUCTURE[6], color: '#D2691E'}
+                ]
+            },
+            candyland: {
+                name: "Candy Land",
+                bgGradientStart: "#ff9a9e", bgGradientMid1: "#fecfef", bgGradientMid2: "#ff9a9e", bgGradientEnd: "#fecfef",
+                textColorMain: "#5D4037", textColorLight: "#fff",
+                accentColor1: "#D81B60", accentColor2: "#FF4081", accentColor2Hover: "#F50057",
+                scoreColor: "#00C853", highscoreColor: "#2979FF", popupTextColor: "#FF4081",
+                containerBg: "rgba(255, 240, 245, 0.98)", canvasBg: "#FFF0F5", canvasBorder: "#FFB6C1",
+                wallColor: "#FFC0CB", infoBarItemBg: "#fff",
+                dangerLineColor: "rgba(233,30,99,0.6)", dropAssistColor: "rgba(100,100,100,0.2)",
+                buttonActiveBg: "#76FF03", buttonActiveHoverBg: "#64DD17", buttonSecondaryBg: "#BA68C8", buttonSecondaryHoverBg: "#AB47BC",
+                fruits: [ 
+                    { ...BASE_FRUITS_DATA_STRUCTURE[0], emoji: '🍬', color: '#FFC107'}, { ...BASE_FRUITS_DATA_STRUCTURE[1], emoji: '🍭', color: '#03A9F4'},
+                    { ...BASE_FRUITS_DATA_STRUCTURE[2], emoji: '🍩', color: '#E91E63'}, { ...BASE_FRUITS_DATA_STRUCTURE[3], emoji: '🍪', color: '#795548'},
+                    { ...BASE_FRUITS_DATA_STRUCTURE[4], emoji: '🍫', color: '#5D4037'}, { ...BASE_FRUITS_DATA_STRUCTURE[5], emoji: '🍦', color: '#FFEB3B'},
+                    { ...BASE_FRUITS_DATA_STRUCTURE[6], emoji: '🍰', color: '#F8BBD0'}
+                ]
+            }
+        };
+        function getDefaultFruitColor(id) { 
+            const defaultColors = ['#D90429', '#EF233C', '#8D99AE', '#F4A261', '#2A9D8F', '#264653', '#E9C46A'];
+            return defaultColors[id] || '#ccc';
+        }
+
+        let currentTheme = THEMES.default; 
+        let FRUITS_DATA = currentTheme.fruits; 
+        
+        const CANVAS_WIDTH = 350;
+        const CANVAS_HEIGHT = 450;
+        const AIM_LINE_Y = 60; 
+        const GAME_OVER_Y_THRESHOLD = 80; 
+        const DROP_COOLDOWN_MS = 450; 
+        const MAX_LEADERBOARD_ENTRIES = 10;
+        const COMBO_WINDOW_MS = 2800; 
+        const COMBO_BASE_SCORE_BONUS = 10; 
+
+        const allScreens = document.querySelectorAll('.screen');
+        const mainMenuScreen = document.getElementById('main-menu-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const leaderboardScreen = document.getElementById('leaderboard-screen');
+        const themesScreen = document.getElementById('themes-screen');
+        const soundPrompt = document.getElementById('sound-prompt');
+
+        let canvasWrapper = document.getElementById('game-canvas-wrapper'); 
+        const scoreDisplay = document.getElementById('score-value');
+        const highScoreDisplay = document.getElementById('high-score-value');
+        const currentAimEmojiDisplay = document.getElementById('current-aim-emoji');
+        const nextInQueueEmojiDisplay = document.getElementById('next-in-queue-emoji');
+        const finalScoreDisplay = document.getElementById('final-score-value');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const themeOptionsContainer = document.querySelector('.theme-options');
+        
+        let aimingFruitPreviewHTML, comboTextDisplay, gameOverScreenDiv, initialsPromptScreen, pauseScreen;
+
+        const startGameButton = document.getElementById('start-game-button');
+        const leaderboardButton = document.getElementById('leaderboard-button');
+        const themesButton = document.getElementById('themes-button');
+        const mainMenuButtonLeaderboard = document.getElementById('main-menu-button-leaderboard');
+        const mainMenuButtonThemes = document.getElementById('main-menu-button-themes');
+        const pauseGameButton = document.getElementById('pause-game-button');
+        const toggleSoundButton = document.getElementById('toggle-sound-button');
+        const toggleDifficultyButton = document.getElementById('toggle-difficulty-button');
+
+        const customAlertOverlay = document.getElementById('custom-alert-overlay');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+        const customAlertOkButton = document.getElementById('custom-alert-ok-button');
+
+        let engine, world, render, runner;
+        let score = 0;
+        let overallHighScore = 0; 
+        let currentAimerMatterBody = null; 
+        let aimingFruitData = null;       
+        let nextFruitInQueueData = null; 
+        let canDrop = true;         
+        let isGameOver = false;
+        let isGamePaused = false; 
+        let dropCooldownTimeoutId = null;
+        let leaderboard = [];
+        let globalSoundsEnabled = true; 
+        let currentDifficulty = 'normal'; 
+        let normalGravityValue = 0.9;
+        let hardGravityValue = 1.3;
+        let comboCounter = 0;
+        let lastMergeTime = 0;
+        let mergeEffectQueue = []; 
+        let scorePopupQueue = [];
+
+        let synthDrop, synthMerge, synthGameOver, synthScore; 
+        let soundsInitialized = false;
+
+        function showScreen(screenId) {
+            allScreens.forEach(screen => screen.classList.remove('active'));
+            const activeScreen = document.getElementById(screenId);
+            if (activeScreen) {
+                activeScreen.classList.add('active');
+                 if (screenId === 'main-menu-screen' && !soundsInitialized && globalSoundsEnabled) {
+                    soundPrompt.style.display = 'block';
+                } else {
+                    soundPrompt.style.display = 'none';
+                }
+            } else {
+                console.error("[DEBUG] Screen not found:", screenId, "Defaulting to main menu.");
+                mainMenuScreen.classList.add('active'); 
+            }
+        }
+
+        function applyTheme(themeName) {
+            const theme = THEMES[themeName];
+            if (!theme) {
+                console.error("[DEBUG] Theme not found:", themeName);
+                return;
+            }
+            currentTheme = theme;
+            FRUITS_DATA = theme.fruits; 
+            
+            const root = document.documentElement;
+            Object.keys(theme).forEach(key => {
+                if (key !== 'fruits' && key !== 'name' && key !== 'bombColor') { 
+                    root.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, theme[key]);
+                }
+            });
+            
+            localStorage.setItem('fruitFusionTheme_v2', themeName);
+            updateThemeButtons();
+            if (render && render.options) { 
+                render.options.background = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
+            }
+            console.log("[DEBUG] Applied theme:", themeName);
+        }
+
+        function loadSavedTheme() {
+            const savedThemeName = localStorage.getItem('fruitFusionTheme_v2');
+            applyTheme(savedThemeName && THEMES[savedThemeName] ? savedThemeName : 'default');
+        }
+
+        function populateThemeButtons() {
+            themeOptionsContainer.innerHTML = ''; 
+            Object.keys(THEMES).forEach(themeName => {
+                const theme = THEMES[themeName];
+                const button = document.createElement('button');
+                button.classList.add('theme-button');
+                button.textContent = theme.name;
+                button.style.backgroundColor = theme.accentColor2; 
+                button.style.color = theme.textColorLight;
+                button.onclick = () => applyTheme(themeName);
+                themeOptionsContainer.appendChild(button);
+            });
+            updateThemeButtons();
+        }
+        function updateThemeButtons() {
+            const buttons = themeOptionsContainer.querySelectorAll('.theme-button');
+            buttons.forEach(button => {
+                button.classList.toggle('active', button.textContent === currentTheme.name);
+            });
+        }
+
+        customAlertOkButton.onclick = () => {
+            customAlertOverlay.style.display = 'none';
+        };
+
+        function showCustomAlert(message) {
+            customAlertMessage.textContent = message;
+            customAlertOverlay.style.display = 'flex';
+        }
+
+        function initializeGame() {
+            console.log("[DEBUG] INIT: Initializing game...");
+            isGameOver = false;
+            isGamePaused = false;
+            score = 0;
+            canDrop = true; 
+            currentAimerMatterBody = null; 
+            aimingFruitData = null;       
+            nextFruitInQueueData = null;  
+            comboCounter = 0;
+            scorePopupQueue = []; 
+            mergeEffectQueue = [];
+            if (dropCooldownTimeoutId) clearTimeout(dropCooldownTimeoutId);
+            dropCooldownTimeoutId = null;
+
+            loadOverallHighScore(); 
+            updateScoreDisplay();
+            updateOverallHighScoreDisplay(); 
+
+            let persistentCanvasWrapperParent = document.getElementById('game-screen').querySelector('#game-canvas-wrapper').parentNode;
+            let oldCanvasWrapper = document.getElementById('game-canvas-wrapper');
+
+            if (runner) Runner.stop(runner); runner = null;
+            if (render) {
+                Render.stop(render);
+                if (render.canvas) render.canvas.remove(); 
+                if (render.events) render.events = {}; 
+                render = null;
+            }
+            if (engine) {
+                if (engine.world) World.clear(engine.world, false); 
+                Engine.clear(engine);
+                engine = null;
+            }
+            
+            const newCanvasWrapper = document.createElement('div');
+            newCanvasWrapper.id = 'game-canvas-wrapper';
+            newCanvasWrapper.innerHTML = `
+                <div id="aiming-fruit-preview"></div>
+                <div id="combo-text-display"></div>
+                <div id="game-over-screen">
+                    <h2>Game Over!</h2>
+                    <p>Final Score: <span id="final-score-value">0</span></p>
+                    <button id="restart-game-button-gameover" class="button">Play Again</button>
+                    <button id="main-menu-button-gameover" class="button button-secondary">Main Menu</button>
+                </div>
+                <div id="initials-prompt-screen">
+                    <h2>New High Score!</h2>
+                    <p>Enter your initials (3 letters):</p>
+                    <input type="text" id="initials-input" maxlength="3">
+                    <button id="submit-initials-button" class="button">Submit</button>
+                </div>
+                <div id="pause-screen">
+                    <h2>Paused</h2>
+                    <button id="resume-game-button" class="button">Resume</button>
+                    <button id="main-menu-button-pause" class="button button-secondary">Main Menu</button>
+                </div>
+            `;
+
+            if (oldCanvasWrapper) {
+                persistentCanvasWrapperParent.replaceChild(newCanvasWrapper, oldCanvasWrapper);
+            } else {
+                persistentCanvasWrapperParent.appendChild(newCanvasWrapper);
+            }
+            canvasWrapper = newCanvasWrapper; 
+
+            aimingFruitPreviewHTML = canvasWrapper.querySelector('#aiming-fruit-preview');
+            comboTextDisplay = canvasWrapper.querySelector('#combo-text-display');
+            gameOverScreenDiv = canvasWrapper.querySelector('#game-over-screen');
+            initialsPromptScreen = canvasWrapper.querySelector('#initials-prompt-screen');
+            pauseScreen = canvasWrapper.querySelector('#pause-screen');
+            
+            const newRestartGameButtonGameOver = gameOverScreenDiv.querySelector('#restart-game-button-gameover');
+            const newMainMenuButtonGameOver = gameOverScreenDiv.querySelector('#main-menu-button-gameover');
+            const newSubmitInitialsButton = initialsPromptScreen.querySelector('#submit-initials-button');
+            const newResumeGameButton = pauseScreen.querySelector('#resume-game-button');
+            const newMainMenuButtonPause = pauseScreen.querySelector('#main-menu-button-pause');
+            const newInitialsInput = initialsPromptScreen.querySelector('#initials-input'); 
+
+            if(newRestartGameButtonGameOver) newRestartGameButtonGameOver.onclick = () => { showScreen('game-screen'); initializeGame(); };
+            if(newMainMenuButtonGameOver) newMainMenuButtonGameOver.onclick = () => showScreen('main-menu-screen');
+            if(newSubmitInitialsButton) newSubmitInitialsButton.onclick = () => {
+                const initialsVal = newInitialsInput.value.trim().toUpperCase().substring(0, 3);
+                if (initialsVal.length === 3) {
+                    addScoreToLeaderboard(initialsVal, score);
+                    initialsPromptScreen.style.display = 'none';
+                    gameOverScreenDiv.style.display = 'flex'; 
+                    finalScoreDisplay.textContent = score; 
+                    newInitialsInput.value = ''; 
+                } else {
+                    showCustomAlert("Please enter 3 initials.");
+                }
+            };
+            if(newResumeGameButton) newResumeGameButton.onclick = togglePauseGame;
+            if(newMainMenuButtonPause) newMainMenuButtonPause.onclick = () => { togglePauseGame(); showScreen('main-menu-screen'); };
+
+            gameOverScreenDiv.style.display = 'none';
+            initialsPromptScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            if (aimingFruitPreviewHTML) aimingFruitPreviewHTML.style.display = 'none'; // Ensure it's hidden before first prepare
+            pauseGameButton.textContent = "Pause";
+
+            engine = Engine.create();
+            world = engine.world;
+            engine.gravity.y = currentDifficulty === 'hard' ? hardGravityValue : normalGravityValue; 
+            engine.positionIterations = 10; 
+            engine.velocityIterations = 8; 
+            engine.constraintIterations = 4; 
+            world.slop = 0.1; 
+
+            render = Render.create({
+                element: canvasWrapper, 
+                engine: engine,
+                options: {
+                    width: CANVAS_WIDTH,
+                    height: CANVAS_HEIGHT,
+                    wireframes: false,
+                    background: getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim() || '#ecf0f1'
+                }
+            });
+            Render.run(render);
+
+            runner = Runner.create();
+            Runner.run(runner, engine);
+
+            const wallThickness = 20;
+            const wallColor = getComputedStyle(document.documentElement).getPropertyValue('--wall-color').trim() || '#95a5a6';
+            World.add(world, [
+                Bodies.rectangle(CANVAS_WIDTH / 2, CANVAS_HEIGHT + wallThickness / 2, CANVAS_WIDTH + wallThickness * 2, wallThickness, { isStatic: true, label: 'ground', render: { fillStyle: wallColor } }),
+                Bodies.rectangle(-wallThickness / 2, CANVAS_HEIGHT / 2, wallThickness, CANVAS_HEIGHT + wallThickness * 2, { isStatic: true, label: 'wallLeft', render: { fillStyle: wallColor } }),
+                Bodies.rectangle(CANVAS_WIDTH + wallThickness / 2, CANVAS_HEIGHT / 2, wallThickness, CANVAS_HEIGHT + wallThickness * 2, { isStatic: true, label: 'wallRight', render: { fillStyle: wallColor } })
+            ]);
+
+            Events.on(engine, 'collisionStart', handleCollision);
+            Events.on(engine, 'afterUpdate', checkGameOverState); 
+            Events.on(render, 'afterRender', renderGameElements); 
+
+            canvasWrapper.addEventListener('pointerdown', setupSoundsOnFirstInteraction, { once: true });
+            canvasWrapper.addEventListener('mousemove', handleMouseMove);
+            canvasWrapper.addEventListener('click', handleCanvasClick);
+            canvasWrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvasWrapper.addEventListener('touchend', handleTouchEnd);
+            
+            aimingFruitData = selectNewRandomFruit();
+            nextFruitInQueueData = selectNewRandomFruit();
+            prepareAimingFruitVisuals(aimingFruitData); 
+            updateNextFruitUIDisplay(aimingFruitData, nextFruitInQueueData); 
+            
+            console.log("[DEBUG] INIT: Game initialized. AIM_LINE_Y:", AIM_LINE_Y, "GAME_OVER_Y_THRESHOLD:", GAME_OVER_Y_THRESHOLD);
+        }
+
+        function setupSoundsOnFirstInteraction() {
+            if (soundsInitialized || !globalSoundsEnabled) return; 
+            soundPrompt.style.display = 'none'; 
+            Tone.start().then(() => {
+                synthDrop = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.1 }, volume: -12 }).toDestination();
+                synthMerge = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.2 }, volume: -10 }).toDestination();
+                synthGameOver = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.05, decay: 0.5, sustain: 0, release: 0.1 }, volume: -8 }).toDestination();
+                synthScore = new Tone.Synth({ oscillator: {type: 'sawtooth'}, envelope: {attack:0.005, decay:0.1, sustain:0.05, release:0.1}, volume: -15}).toDestination();
+                soundsInitialized = true;
+            }).catch(e => console.error("[DEBUG] SOUND: Error starting Tone.js", e));
+        }
+
+        function playSound(type, note = 'C4') {
+            if (!soundsInitialized || !globalSoundsEnabled) return;
+            try {
+                if (type === 'drop' && synthDrop) synthDrop.triggerAttackRelease(note, '8n');
+                else if (type === 'merge' && synthMerge) synthMerge.triggerAttackRelease(Tone.Frequency(note).transpose(5).toNote(), '8n', Tone.now() + 0.05);
+                else if (type === 'gameOver' && synthGameOver) synthGameOver.triggerAttackRelease('A2', '2n');
+                else if (type === 'score' && synthScore) synthScore.triggerAttackRelease(Tone.Frequency(note).transpose(12).toNote(), '16n');
+            } catch (e) { console.warn("[DEBUG] SOUND: Error playing sound", e); }
+        }
+
+        function selectNewRandomFruit() {
+            const availableInitialFruits = FRUITS_DATA.slice(0, 3); 
+            return { ...availableInitialFruits[Math.floor(Math.random() * availableInitialFruits.length)] }; 
+        }
+
+        function prepareAimingFruitVisuals(fruitData) {
+            if (!aimingFruitPreviewHTML) {
+                console.warn("[DEBUG] prepareAimingFruitVisuals: aimingFruitPreviewHTML is not ready yet.");
+                return;
+            }
+
+            if (isGameOver || !fruitData || isGamePaused) {
+                aimingFruitPreviewHTML.style.display = 'none';
+                aimingFruitPreviewHTML.classList.remove('show'); 
+                currentAimerMatterBody = null;
+                return;
+            }
+
+            aimingFruitData = fruitData;
+
+            if (!currentAimerMatterBody || currentAimerMatterBody.fruitId !== aimingFruitData.id) {
+                currentAimerMatterBody = Bodies.circle(CANVAS_WIDTH / 2, AIM_LINE_Y, aimingFruitData.radius, {
+                    isStatic: true,
+                    label: 'aimingFruitInvisible',
+                    fruitId: aimingFruitData.id,
+                    render: { visible: false }
+                });
+            } else {
+                Body.setPosition(currentAimerMatterBody, { x: currentAimerMatterBody.position.x, y: AIM_LINE_Y });
+            }
+
+            aimingFruitPreviewHTML.style.width = `${aimingFruitData.radius * 2}px`;
+            aimingFruitPreviewHTML.style.height = `${aimingFruitData.radius * 2}px`;
+            aimingFruitPreviewHTML.style.backgroundColor = aimingFruitData.color;
+            aimingFruitPreviewHTML.textContent = aimingFruitData.emoji;
+            aimingFruitPreviewHTML.style.fontSize = `${aimingFruitData.radius * 1.6}px`;
+            aimingFruitPreviewHTML.classList.remove('pulse');
+
+            positionAimingFruitPreview(currentAimerMatterBody.position.x);
+
+            // Simplified showing mechanism - directly set final styles
+            aimingFruitPreviewHTML.style.opacity = '0.65'; 
+            aimingFruitPreviewHTML.style.transform = 'scale(1)'; 
+            aimingFruitPreviewHTML.classList.remove('show'); // Not using .show class for this simplified approach
+            
+            // Ensure display is flex, this should be the last style affecting display
+            aimingFruitPreviewHTML.style.display = 'flex'; 
+
+            console.log(`[DEBUG] Preview prepared for ${aimingFruitData.name}: display=${aimingFruitPreviewHTML.style.display}, opacity=${aimingFruitPreviewHTML.style.opacity}, top=${aimingFruitPreviewHTML.style.top}, left=${aimingFruitPreviewHTML.style.left}, width=${aimingFruitPreviewHTML.style.width}`);
+        }
+
+
+        function positionAimingFruitPreview(mouseX) {
+            if (!aimingFruitData || !currentAimerMatterBody || !aimingFruitPreviewHTML) return; 
+            const previewRadius = aimingFruitData.radius;
+            const x = Math.max(previewRadius, Math.min(CANVAS_WIDTH - previewRadius, mouseX));
+            
+            aimingFruitPreviewHTML.style.left = `${x - previewRadius}px`;
+            aimingFruitPreviewHTML.style.top = `${AIM_LINE_Y - previewRadius}px`; 
+
+            Body.setPosition(currentAimerMatterBody, { x: x, y: AIM_LINE_Y }); 
+        }
+
+        function dropFruit() {
+            if (!aimingFruitData || isGameOver || !currentAimerMatterBody || isGamePaused) { 
+                return;
+            }
+            
+            const fruitToDropData = aimingFruitData; 
+            
+            const dynamicFruit = Bodies.circle(
+                currentAimerMatterBody.position.x, 
+                currentAimerMatterBody.position.y, 
+                fruitToDropData.radius,
+                {
+                    fruitId: fruitToDropData.id,
+                    label: 'fruit', 
+                    restitution: 0.45, 
+                    friction: 0.4,    
+                    density: 0.0015, 
+                    frictionAir: 0.005, 
+                    render: { 
+                        fillStyle: fruitToDropData.color 
+                    }
+                }
+            );
+            World.add(world, dynamicFruit);
+            playSound('drop'); 
+            
+            aimingFruitData = nextFruitInQueueData; 
+            nextFruitInQueueData = selectNewRandomFruit(); 
+            updateNextFruitUIDisplay(aimingFruitData, nextFruitInQueueData); 
+
+            currentAimerMatterBody = null; 
+            if (aimingFruitPreviewHTML) { 
+                aimingFruitPreviewHTML.style.display = 'none'; 
+                aimingFruitPreviewHTML.classList.remove('show'); 
+            }
+            
+            canDrop = false; 
+
+            if (dropCooldownTimeoutId) clearTimeout(dropCooldownTimeoutId);
+            dropCooldownTimeoutId = setTimeout(() => {
+                canDrop = true;
+                if (!isGameOver && !isGamePaused) {
+                    prepareAimingFruitVisuals(aimingFruitData); 
+                }
+            }, DROP_COOLDOWN_MS);
+        }
+
+
+        function handleMouseMove(event) {
+            if (!currentAimerMatterBody || isGameOver || !aimingFruitData || isGamePaused || !canvasWrapper) return; 
+            const rect = canvasWrapper.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            positionAimingFruitPreview(mouseX);
+        }
+
+        function handleCanvasClick() {
+            if (currentAimerMatterBody && aimingFruitData && canDrop && !isGameOver && !isGamePaused) { 
+                dropFruit();
+            }
+        }
+        
+        function handleTouchMove(event) {
+            if (!currentAimerMatterBody || isGameOver || !aimingFruitData || isGamePaused || !canvasWrapper) return;
+            event.preventDefault(); 
+            if (event.touches.length > 0) {
+                const touch = event.touches[0];
+                const rect = canvasWrapper.getBoundingClientRect();
+                const touchX = touch.clientX - rect.left;
+                positionAimingFruitPreview(touchX);
+            }
+        }
+
+        function handleTouchEnd() {
+            if (currentAimerMatterBody && aimingFruitData && canDrop && !isGameOver && !isGamePaused) {
+                dropFruit();
+            }
+        }
+        
+        function handleCollision(event) {
+            if (isGameOver || isGamePaused) return;
+            const pairs = event.pairs;
+            pairs.forEach(pair => {
+                const bodyA = pair.bodyA;
+                const bodyB = pair.bodyB;
+
+                if (bodyA.label === 'fruit' && bodyB.label === 'fruit' &&
+                    bodyA.fruitId === bodyB.fruitId) {
+                    
+                    if (!Composite.get(world, bodyA.id, 'body') || !Composite.get(world, bodyB.id, 'body')) {
+                        return;
+                    }
+
+                    const currentFruit = FRUITS_DATA.find(f => f.id === bodyA.fruitId); 
+                    if (currentFruit && currentFruit.nextId !== null) { 
+                        const posA = { ...bodyA.position }; 
+                        const posB = { ...bodyB.position };
+
+                        World.remove(world, bodyA);
+                        World.remove(world, bodyB);
+
+                        const nextFruit = FRUITS_DATA.find(f => f.id === currentFruit.nextId);
+                        const mergeX = (posA.x + posB.x) / 2;
+                        const mergeY = (posA.y + posB.y) / 2 - 5; 
+
+                        const newFruit = Bodies.circle(
+                            mergeX, mergeY, nextFruit.radius,
+                            {
+                                fruitId: nextFruit.id,
+                                label: 'fruit', 
+                                restitution: 0.45, 
+                                friction: 0.4,    
+                                density: 0.0015, 
+                                frictionAir: 0.005,  
+                                render: { fillStyle: nextFruit.color }
+                            }
+                        );
+                        World.add(world, newFruit);
+                        mergeEffectQueue.push({ x: newFruit.position.x, y: newFruit.position.y, radius: newFruit.radius, life: 20 }); 
+                        playSound('merge', Tone.Frequency(nextFruit.id + 60, "midi").toNote()); 
+                        
+                        let mergeScore = currentFruit.points * 2 + (nextFruit.points || 0); 
+                        
+                        const currentTime = Date.now();
+                        if (currentTime - lastMergeTime < COMBO_WINDOW_MS) {
+                            comboCounter++;
+                        } else {
+                            comboCounter = 1; 
+                        }
+                        lastMergeTime = currentTime;
+                        if (comboCounter > 1) {
+                            mergeScore += COMBO_BASE_SCORE_BONUS * comboCounter;
+                            showComboText(comboCounter);
+                        }
+                        score += mergeScore;
+                        createScorePopup(mergeX, mergeY, mergeScore);
+                        updateScoreDisplay();
+                    }
+                }
+            });
+        }
+        
+        function createScorePopup(x, y, points) {
+            if (!canvasWrapper) return; 
+            const popup = document.createElement('div');
+            popup.classList.add('score-popup-text');
+            popup.textContent = `+${points}`;
+            popup.style.left = `${x}px`; 
+            popup.style.top = `${y - 20}px`; 
+            popup.style.transform = 'translateX(-50%) translateY(0) scale(0.8)';
+            popup.style.opacity = '1';
+            popup.style.color = getComputedStyle(document.documentElement).getPropertyValue('--popup-text-color').trim();
+            canvasWrapper.appendChild(popup); 
+            playSound('score', Tone.Frequency(points + 70, "midi").toNote());
+
+            setTimeout(() => { 
+                popup.style.transform = 'translateX(-50%) translateY(-40px) scale(1.1)'; 
+                popup.style.opacity = '0';
+                setTimeout(() => {
+                    popup.remove();
+                }, 500); 
+            }, 50); 
+        }
+
+        function showComboText(count) {
+            if(!comboTextDisplay) return; 
+            comboTextDisplay.textContent = `COMBO x${count}!`;
+            comboTextDisplay.style.color = getComputedStyle(document.documentElement).getPropertyValue('--popup-text-color').trim();
+            comboTextDisplay.classList.add('show');
+            setTimeout(() => {
+                comboTextDisplay.classList.remove('show');
+            }, 1200); 
+        }
+        
+        function checkGameOverState() {
+            if (isGameOver || isGamePaused || !world) return; 
+            const bodies = Composite.allBodies(world);
+            for (let body of bodies) {
+                if (body.label === 'fruit' && !body.isStatic) { 
+                    const fruitData = FRUITS_DATA.find(f => f.id === body.fruitId);
+                    if (fruitData) {
+                        const fruitTopY = body.position.y - fruitData.radius;
+                        if (fruitTopY < GAME_OVER_Y_THRESHOLD) { 
+                            if (Math.abs(body.velocity.y) < 0.1 && body.angularVelocity < 0.1) {
+                                triggerGameOver();
+                                break; 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function triggerGameOver() {
+            if (isGameOver) return; 
+            isGameOver = true;
+            canDrop = false; 
+            if (runner) Runner.stop(runner); 
+            playSound('gameOver');
+            
+            saveOverallHighScore(); 
+            if (finalScoreDisplay) finalScoreDisplay.textContent = score; 
+
+            if (initialsPromptScreen && gameOverScreenDiv) { 
+                if (checkIfQualifiesForLeaderboard(score)) {
+                    initialsPromptScreen.style.display = 'flex';
+                    gameOverScreenDiv.style.display = 'none'; 
+                } else {
+                    gameOverScreenDiv.style.display = 'flex';
+                    initialsPromptScreen.style.display = 'none';
+                }
+            }
+            if (aimingFruitPreviewHTML) aimingFruitPreviewHTML.style.display = 'none'; 
+        }
+
+        function renderGameElements() {
+            if (!render || !world || !render.context) return; 
+            const context = render.context;
+            const bodies = Composite.allBodies(world);
+
+            context.save(); 
+
+            context.beginPath();
+            context.setLineDash([5, 5]);
+            context.moveTo(0, GAME_OVER_Y_THRESHOLD);
+            context.lineTo(CANVAS_WIDTH, GAME_OVER_Y_THRESHOLD);
+            context.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--danger-line-color').trim();
+            context.lineWidth = 1.5;
+            context.stroke();
+            context.setLineDash([]); 
+
+            if (currentAimerMatterBody && aimingFruitPreviewHTML && aimingFruitPreviewHTML.style.display !== 'none' && aimingFruitData) {  
+                const aimerPositionX = currentAimerMatterBody.position.x; 
+                context.beginPath();
+                const aimerRadius = aimingFruitData.radius; 
+                context.moveTo(aimerPositionX, AIM_LINE_Y + aimerRadius); 
+                context.lineTo(aimerPositionX, CANVAS_HEIGHT);
+                context.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--drop-assist-color').trim();
+                context.lineWidth = 1;
+                context.stroke();
+            }
+
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            const fontFamily = getComputedStyle(document.body).fontFamily;
+
+            bodies.forEach(body => {
+                if (body.label === 'fruit' && body.fruitId !== undefined && !body.isStatic) {
+                    const fruitData = FRUITS_DATA.find(f => f.id === body.fruitId);
+                    if (fruitData) {
+                        const fontSize = fruitData.radius * 1.7; 
+                        context.font = `${fontSize}px ${fontFamily}`; 
+                        context.fillStyle = '#000'; 
+                        context.fillText(fruitData.emoji, body.position.x, body.position.y + fruitData.radius * 0.1); 
+                    }
+                }
+            });
+
+            for (let i = mergeEffectQueue.length - 1; i >= 0; i--) {
+                const effect = mergeEffectQueue[i];
+                const scaleFactor = 1 + (20 - effect.life) / 30; 
+                const currentRadius = effect.radius * scaleFactor;
+                context.beginPath();
+                context.arc(effect.x, effect.y, currentRadius, 0, Math.PI * 2);
+                context.strokeStyle = currentTheme.accentColor1; 
+                context.lineWidth = 2.5;
+                context.globalAlpha = effect.life / 20; 
+                context.stroke();
+                effect.life--;
+                if (effect.life <= 0) {
+                    mergeEffectQueue.splice(i, 1);
+                }
+            }
+            context.globalAlpha = 1; 
+            context.restore(); 
+        }
+
+        function updateScoreDisplay() { if(scoreDisplay) scoreDisplay.textContent = score; }
+        function loadOverallHighScore() { overallHighScore = parseInt(localStorage.getItem('fruitFusionOverallHighScore_v2')) || 0; }
+        function saveOverallHighScore() {
+            if (score > overallHighScore) {
+                overallHighScore = score;
+                localStorage.setItem('fruitFusionOverallHighScore_v2', overallHighScore);
+            }
+            updateOverallHighScoreDisplay(); 
+        }
+        function updateOverallHighScoreDisplay() { if(highScoreDisplay) highScoreDisplay.textContent = overallHighScore; }
+        function updateNextFruitUIDisplay(currentAim, nextInQ) { 
+            if (currentAimEmojiDisplay) {
+                currentAimEmojiDisplay.textContent = currentAim ? currentAim.emoji : '';
+            }
+            if (nextInQueueEmojiDisplay) {
+                nextInQueueEmojiDisplay.textContent = nextInQ ? nextInQ.emoji : '';
+            }
+        }
+
+        function loadLeaderboard() {
+            const storedLeaderboard = localStorage.getItem('fruitFusionLeaderboard_v2');
+            leaderboard = storedLeaderboard ? JSON.parse(storedLeaderboard) : [];
+        }
+        function saveLeaderboard() {
+            localStorage.setItem('fruitFusionLeaderboard_v2', JSON.stringify(leaderboard));
+        }
+        function addScoreToLeaderboard(initials, newScore) {
+            leaderboard.push({ initials, score: newScore });
+            leaderboard.sort((a, b) => b.score - a.score); 
+            leaderboard = leaderboard.slice(0, MAX_LEADERBOARD_ENTRIES); 
+            saveLeaderboard();
+        }
+        function displayLeaderboard() {
+            loadLeaderboard();
+            leaderboardList.innerHTML = ''; 
+            if (leaderboard.length === 0) {
+                leaderboardList.innerHTML = '<li>No scores yet! Be the first!</li>';
+                return;
+            }
+            leaderboard.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="rank">${index + 1}.</span> <span class="initials">${entry.initials}</span> <span class="score">${entry.score}</span>`;
+                leaderboardList.appendChild(li);
+            });
+        }
+        function checkIfQualifiesForLeaderboard(currentScore) {
+            loadLeaderboard(); 
+            if (currentScore <= 0) return false; 
+            if (leaderboard.length < MAX_LEADERBOARD_ENTRIES) return true;
+            return currentScore > leaderboard[leaderboard.length - 1].score;
+        }
+
+        startGameButton.onclick = () => {
+            showScreen('game-screen');
+            initializeGame(); 
+        };
+        leaderboardButton.onclick = () => {
+            displayLeaderboard();
+            showScreen('leaderboard-screen');
+        };
+        themesButton.onclick = () => {
+            showScreen('themes-screen');
+        };
+        mainMenuButtonLeaderboard.onclick = () => showScreen('main-menu-screen');
+        mainMenuButtonThemes.onclick = () => showScreen('main-menu-screen');
+        pauseGameButton.onclick = togglePauseGame;
+
+        toggleSoundButton.onclick = () => {
+            globalSoundsEnabled = !globalSoundsEnabled;
+            toggleSoundButton.textContent = `Sound: ${globalSoundsEnabled ? 'On' : 'Off'}`;
+            toggleSoundButton.classList.toggle('active', globalSoundsEnabled);
+            localStorage.setItem('fruitFusionSound_v2', globalSoundsEnabled);
+            if (globalSoundsEnabled && !soundsInitialized && Tone.context.state !== 'running') {
+                 console.log("[DEBUG] Sound toggled on. Tone state:", Tone.context.state);
+            }
+        };
+        function loadSoundPreference() {
+            const savedSoundPref = localStorage.getItem('fruitFusionSound_v2');
+            globalSoundsEnabled = savedSoundPref !== null ? JSON.parse(savedSoundPref) : true;
+            toggleSoundButton.textContent = `Sound: ${globalSoundsEnabled ? 'On' : 'Off'}`;
+            toggleSoundButton.classList.toggle('active', globalSoundsEnabled);
+        }
+
+        toggleDifficultyButton.onclick = () => {
+            if (currentDifficulty === 'normal') {
+                currentDifficulty = 'hard';
+                toggleDifficultyButton.textContent = "Hard G";
+            } else {
+                currentDifficulty = 'normal';
+                toggleDifficultyButton.textContent = "Normal G";
+            }
+            toggleDifficultyButton.classList.toggle('active', currentDifficulty === 'hard');
+            if (engine) engine.gravity.y = currentDifficulty === 'hard' ? hardGravityValue : normalGravityValue;
+            localStorage.setItem('fruitFusionDifficulty_v2', currentDifficulty);
+        };
+        function loadDifficultyPreference() {
+            const savedDiff = localStorage.getItem('fruitFusionDifficulty_v2');
+            currentDifficulty = savedDiff === 'hard' ? 'hard' : 'normal';
+             toggleDifficultyButton.textContent = currentDifficulty === 'hard' ? "Hard G" : "Normal G";
+            toggleDifficultyButton.classList.toggle('active', currentDifficulty === 'hard');
+        }
+
+        function togglePauseGame() {
+            if (isGameOver) return;
+            isGamePaused = !isGamePaused;
+            if (!pauseScreen || !runner || !engine) { 
+                return;
+            }
+
+            if (isGamePaused) {
+                Runner.stop(runner);
+                if (dropCooldownTimeoutId) clearTimeout(dropCooldownTimeoutId);
+                pauseScreen.style.display = 'flex';
+                pauseGameButton.textContent = "Resume"; 
+                if (aimingFruitPreviewHTML) aimingFruitPreviewHTML.style.display = 'none'; 
+            } else {
+                Runner.run(runner, engine);
+                pauseScreen.style.display = 'none';
+                pauseGameButton.textContent = "Pause";
+                if (aimingFruitData && canDrop) { 
+                    prepareAimingFruitVisuals(aimingFruitData);
+                } else if (canDrop && !aimingFruitData) { 
+                     aimingFruitData = nextFruitInQueueData; 
+                     nextFruitInQueueData = selectNewRandomFruit();
+                     prepareAimingFruitVisuals(aimingFruitData);
+                     updateNextFruitUIDisplay(aimingFruitData, nextFruitInQueueData);
+                } else {
+                     if (aimingFruitPreviewHTML) aimingFruitPreviewHTML.style.display = 'none'; 
+                }
+            }
+        }
+
+        window.onload = () => {
+            loadSavedTheme();
+            populateThemeButtons();
+            loadLeaderboard(); 
+            loadOverallHighScore(); 
+            updateOverallHighScoreDisplay();
+            loadSoundPreference();
+            loadDifficultyPreference();
+            showScreen('main-menu-screen'); 
+        };
+
+    </script>
+</body>
+</html>
