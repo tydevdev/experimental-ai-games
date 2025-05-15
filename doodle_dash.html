@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doodle Dash Refined</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            overscroll-behavior: none; /* Prevents pull-to-refresh on mobile */
+            touch-action: none; /* Disables default touch actions like scrolling on the body */
+        }
+        .control-button {
+            transition: all 0.1s ease-in-out;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.5); /* Basic button shadow */
+        }
+        .control-button:active {
+            transform: scale(0.95) translate(1px, 1px);
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+        }
+        .color-button.active-color,
+        .size-button.active-size,
+        .tool-button.active-tool,
+        .bg-color-button.active-bg-color {
+            box-shadow: 0 0 0 3px #000, 0 0 0 5px #fff, 2px 2px 0px rgba(0,0,0,0.5); /* Enhanced active state */
+            transform: scale(1.1);
+        }
+        .control-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+        .palette-scrollbar::-webkit-scrollbar {
+            height: 8px;
+        }
+        .palette-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #4a5568; /* gray-700 */
+            border-radius: 10px;
+        }
+        .palette-scrollbar::-webkit-scrollbar-track {
+            background-color: #edf2f7; /* gray-200 */
+        }
+        #drawingCanvas {
+            cursor: crosshair;
+            touch-action: none; /* Important for mobile drawing on the canvas itself */
+            width: 100%; 
+        }
+        .main-container {
+            width: 100%;
+            max-width: 700px; 
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-400 via-teal-400 to-green-500 flex flex-col items-center justify-center min-h-screen p-2 sm:p-4 overflow-hidden">
+
+    <div class="main-container bg-white/80 backdrop-blur-lg shadow-2xl rounded-xl p-3 sm:p-6">
+        <h1 class="text-2xl sm:text-4xl text-center text-gray-800 mb-3 sm:mb-6">Doodle Dash!</h1>
+
+        <canvas id="drawingCanvas" class="rounded-lg shadow-inner w-full aspect-[4/3] md:aspect-video"></canvas>
+        
+        <div class="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="text-center">
+                    <p class="text-xs sm:text-sm text-gray-700 mb-2">Brush Color:</p>
+                    <div id="colorPalette" class="mt-1 palette-scrollbar flex justify-start md:justify-center items-center space-x-1 sm:space-x-2 overflow-x-auto pb-2 px-1">
+                        </div>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs sm:text-sm text-gray-700 mb-2">Background:</p>
+                    <div id="bgPalette" class="mt-1 palette-scrollbar flex justify-start md:justify-center items-center space-x-1 sm:space-x-2 overflow-x-auto pb-2 px-1">
+                        </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                <div class="text-center">
+                    <p class="text-xs sm:text-sm text-gray-700 mb-2">Brush Size:</p>
+                    <div id="sizeControls" class="mt-1 flex justify-center space-x-1 sm:space-x-2">
+                        </div>
+                </div>
+
+                <div class="text-center">
+                    <p class="text-xs sm:text-sm text-gray-700 mb-2">Tools:</p>
+                    <div id="toolControls" class="mt-1 flex justify-center space-x-1 sm:space-x-2">
+                        </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 sm:gap-3">
+                <button id="undoButton" class="control-button bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-3 rounded-lg text-xs sm:text-sm">↩️ Undo</button>
+                <button id="redoButton" class="control-button bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-3 rounded-lg text-xs sm:text-sm">↪️ Redo</button>
+                <button id="saveButton" class="control-button bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-3 rounded-lg text-xs sm:text-sm">💾 Save</button>
+            </div>
+
+            <button id="clearButton" class="control-button w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 sm:py-3 px-4 rounded-lg active:bg-red-700 text-sm sm:text-base">
+                🗑️ Clear Canvas
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('drawingCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // State variables
+            let isDrawing = false;
+            let didDrawSomething = false; 
+            let lastX = 0;
+            let lastY = 0;
+            let currentColor = '#000000';
+            let currentLineWidth = 5;
+            let currentTool = 'pen'; 
+            let currentBackgroundColor = '#FFFFFF'; 
+
+            // History for Undo/Redo
+            let history = [];
+            let historyStep = -1; 
+            const MAX_HISTORY_STATES = 25;
+            let isInitialResize = true; 
+
+            // --- Helper function to convert hex to RGB ---
+            function hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            }
+
+            // --- Canvas Setup & Background Fill ---
+            function fillCanvasBackground() {
+                const prevFillStyle = ctx.fillStyle;
+                const prevCompositeOp = ctx.globalCompositeOperation;
+
+                ctx.fillStyle = currentBackgroundColor;
+                ctx.globalCompositeOperation = 'source-over'; 
+                ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight); 
+
+                ctx.fillStyle = prevFillStyle;
+                ctx.globalCompositeOperation = prevCompositeOp;
+            }
+
+            function resizeCanvas() {
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = canvas.clientWidth * dpr;
+                canvas.height = canvas.clientHeight * dpr;
+                ctx.scale(dpr, dpr);
+
+                fillCanvasBackground(); 
+
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineWidth = currentLineWidth;
+                if (currentTool === 'eraser') {
+                    ctx.globalCompositeOperation = 'source-over'; 
+                    ctx.strokeStyle = currentBackgroundColor; 
+                } else {
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = currentColor;
+                }
+
+                if (!isInitialResize) {
+                    history = [];
+                    historyStep = -1;
+                    addCurrentStateToHistory(); 
+                }
+            }
+
+            // --- History Management ---
+            function addCurrentStateToHistory() {
+                if (historyStep < history.length - 1) {
+                    history = history.slice(0, historyStep + 1);
+                }
+                history.push(canvas.toDataURL());
+                historyStep++;
+                if (history.length > MAX_HISTORY_STATES) {
+                    history.shift(); 
+                    historyStep--;   
+                }
+                updateUndoRedoButtons();
+            }
+
+            function restoreStateFromHistory(step) {
+                if (step < 0 || step >= history.length) return;
+                
+                const img = new Image();
+                img.onload = () => {
+                    fillCanvasBackground(); 
+                    const originalCompositeOp = ctx.globalCompositeOperation;
+                    ctx.globalCompositeOperation = 'source-over'; 
+                    ctx.drawImage(img, 0, 0, canvas.clientWidth, canvas.clientHeight);
+                    ctx.globalCompositeOperation = originalCompositeOp; 
+                    
+                    ctx.lineWidth = currentLineWidth;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    if (currentTool === 'eraser') {
+                        ctx.strokeStyle = currentBackgroundColor;
+                        ctx.globalCompositeOperation = 'source-over';
+                    } else {
+                        ctx.strokeStyle = currentColor;
+                        ctx.globalCompositeOperation = 'source-over';
+                    }
+                };
+                img.src = history[step];
+                historyStep = step;
+                updateUndoRedoButtons();
+            }
+
+            // --- Drawing Event Handlers ---
+            function getCoordinates(event) {
+                const rect = canvas.getBoundingClientRect();
+                let x, y;
+                if (event.touches && event.touches.length > 0) {
+                    x = event.touches[0].clientX - rect.left;
+                    y = event.touches[0].clientY - rect.top;
+                } else {
+                    x = event.clientX - rect.left;
+                    y = event.clientY - rect.top;
+                }
+                return { x, y };
+            }
+
+            function startDrawing(event) {
+                event.preventDefault(); 
+                isDrawing = true;
+                didDrawSomething = false; 
+                const coords = getCoordinates(event);
+                [lastX, lastY] = [coords.x, coords.y];
+                
+                ctx.lineWidth = currentLineWidth;
+                if (currentTool === 'eraser') {
+                    ctx.strokeStyle = currentBackgroundColor;
+                    ctx.globalCompositeOperation = 'source-over';
+                } else {
+                    ctx.strokeStyle = currentColor;
+                    ctx.globalCompositeOperation = 'source-over';
+                }
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+            }
+
+            function draw(event) {
+                if (!isDrawing) return;
+                event.preventDefault();
+                didDrawSomething = true; 
+                const coords = getCoordinates(event);
+                ctx.lineTo(coords.x, coords.y);
+                ctx.stroke();
+                [lastX, lastY] = [coords.x, coords.y];
+            }
+
+            function stopDrawing(event) {
+                if (!isDrawing) return;
+                event.preventDefault();
+                isDrawing = false;
+                if (didDrawSomething) { 
+                    addCurrentStateToHistory();
+                }
+            }
+
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing); 
+            canvas.addEventListener('touchstart', startDrawing, { passive: false });
+            canvas.addEventListener('touchmove', draw, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing);
+            canvas.addEventListener('touchcancel', stopDrawing); 
+
+            // --- Control UI Elements & Logic ---
+            const colorPaletteContainer = document.getElementById('colorPalette');
+            const bgPaletteContainer = document.getElementById('bgPalette');
+            const sizeControlsContainer = document.getElementById('sizeControls');
+            const toolControlsContainer = document.getElementById('toolControls');
+            const clearButton = document.getElementById('clearButton');
+            // ... other buttons ...
+
+            const brushColors = ['#000000', '#FF3030', '#FF9A30', '#FFFF30', '#5DFF30', '#30FFB7', '#30A2FF', '#8A30FF', '#FF30DC', '#FFFFFF', '#AAAAAA', '#666666'];
+            const backgroundColors = ['#FFFFFF', '#E0E0E0', '#A0A0A0', '#FFFFCC', '#CCEEFF', '#CCFFCC', '#FFDDCC', '#202020'];
+            const brushSizes = [ /* ...sizes... */ { name: 'XS', size: 2 }, { name: 'S', size: 5 }, { name: 'M', size: 10 }, { name: 'L', size: 20 }, { name: 'XL', size: 30 }];
+            const tools = [ /* ...tools... */ { name: 'Pen', id: 'pen', icon: '✏️' }, { name: 'Eraser', id: 'eraser', icon: '🧼' }];
+
+            function updateActiveButton(container, activeValue, dataAttribute, buttonClass, activeClassSuffix) {
+                if (!container) return; 
+                container.querySelectorAll(`.${buttonClass}`).forEach(btn => {
+                    btn.classList.remove(`active-${activeClassSuffix}`);
+                    if (btn.dataset[dataAttribute] === String(activeValue)) {
+                        btn.classList.add(`active-${activeClassSuffix}`);
+                    }
+                });
+            }
+            
+            brushColors.forEach(color => {
+                const button = document.createElement('button');
+                button.className = 'control-button color-button w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-gray-500 focus:outline-none shrink-0';
+                button.style.backgroundColor = color;
+                button.dataset.color = color;
+                button.addEventListener('click', () => {
+                    currentColor = color;
+                    currentTool = 'pen'; 
+                    ctx.strokeStyle = currentColor;
+                    ctx.globalCompositeOperation = 'source-over';
+                    updateActiveButton(colorPaletteContainer, currentColor, 'color', 'color-button', 'color');
+                    updateActiveButton(toolControlsContainer, currentTool, 'tool', 'tool-button', 'tool');
+                });
+                colorPaletteContainer.appendChild(button);
+            });
+
+            backgroundColors.forEach(newBgColorHex => {
+                const button = document.createElement('button');
+                button.className = 'control-button bg-color-button w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-gray-500 focus:outline-none shrink-0';
+                button.style.backgroundColor = newBgColorHex;
+                button.dataset.bgColor = newBgColorHex;
+                button.addEventListener('click', () => {
+                    const previousBackgroundColorHex = currentBackgroundColor;
+                    const oldDrawingDataUrl = canvas.toDataURL();
+                    currentBackgroundColor = newBgColorHex;
+
+                    fillCanvasBackground(); // Fill main canvas with the new background
+
+                    const img = new Image();
+                    img.onload = () => {
+                        // Check if the old drawing was just a plain fill of the previous background color
+                        const tempCheckCanvas = document.createElement('canvas');
+                        tempCheckCanvas.width = canvas.width; // Physical pixel dimensions
+                        tempCheckCanvas.height = canvas.height;
+                        const tempCheckCtx = tempCheckCanvas.getContext('2d');
+                        tempCheckCtx.fillStyle = previousBackgroundColorHex;
+                        tempCheckCtx.fillRect(0, 0, tempCheckCanvas.width, tempCheckCanvas.height);
+                        const blankPreviousBgDataUrl = tempCheckCanvas.toDataURL();
+
+                        if (oldDrawingDataUrl === blankPreviousBgDataUrl) {
+                            // Canvas was "empty" (just the old background). New background is already applied.
+                        } else {
+                            // Process the old drawing to make its background transparent
+                            const tempDrawCanvas = document.createElement('canvas');
+                            tempDrawCanvas.width = img.width; // Native image dimensions
+                            tempDrawCanvas.height = img.height;
+                            const tempDrawCtx = tempDrawCanvas.getContext('2d');
+                            tempDrawCtx.drawImage(img, 0, 0);
+
+                            const imageData = tempDrawCtx.getImageData(0, 0, tempDrawCanvas.width, tempDrawCanvas.height);
+                            const data = imageData.data;
+                            const prevBgRgb = hexToRgb(previousBackgroundColorHex);
+
+                            if (prevBgRgb) {
+                                for (let i = 0; i < data.length; i += 4) {
+                                    if (data[i] === prevBgRgb.r && data[i + 1] === prevBgRgb.g && data[i + 2] === prevBgRgb.b) {
+                                        data[i + 3] = 0; // Set alpha to 0 (transparent)
+                                    }
+                                }
+                                tempDrawCtx.putImageData(imageData, 0, 0);
+                            }
+                            // Draw the processed image onto the main canvas
+                            const originalCompositeOp = ctx.globalCompositeOperation;
+                            ctx.globalCompositeOperation = 'source-over';
+                            ctx.drawImage(tempDrawCanvas, 0, 0, canvas.clientWidth, canvas.clientHeight);
+                            ctx.globalCompositeOperation = originalCompositeOp;
+                        }
+                        
+                        addCurrentStateToHistory();
+                        if (currentTool === 'eraser') {
+                            ctx.strokeStyle = currentBackgroundColor;
+                        }
+                    };
+                    img.src = oldDrawingDataUrl;
+                    updateActiveButton(bgPaletteContainer, currentBackgroundColor, 'bgColor', 'bg-color-button', 'bg-color');
+                });
+                bgPaletteContainer.appendChild(button);
+            });
+
+            brushSizes.forEach(brush => {
+                const button = document.createElement('button');
+                button.className = 'control-button size-button bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-2 sm:py-2 sm:px-3 rounded-md text-xs sm:text-sm';
+                button.textContent = brush.name;
+                button.dataset.size = brush.size;
+                button.addEventListener('click', () => {
+                    currentLineWidth = brush.size;
+                    ctx.lineWidth = currentLineWidth; 
+                    updateActiveButton(sizeControlsContainer, currentLineWidth, 'size', 'size-button', 'size');
+                });
+                sizeControlsContainer.appendChild(button);
+            });
+
+            tools.forEach(tool => {
+                const button = document.createElement('button');
+                button.className = 'control-button tool-button bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-2 sm:py-2 sm:px-3 rounded-md text-base sm:text-lg';
+                button.innerHTML = `<span role="img" aria-label="${tool.name}">${tool.icon}</span>`;
+                button.dataset.tool = tool.id;
+                button.addEventListener('click', () => {
+                    currentTool = tool.id;
+                    if (currentTool === 'eraser') {
+                        ctx.strokeStyle = currentBackgroundColor; 
+                        ctx.globalCompositeOperation = 'source-over'; 
+                        colorPaletteContainer.querySelectorAll('.color-button').forEach(btn => btn.classList.remove('active-color'));
+                    } else { 
+                        ctx.strokeStyle = currentColor;
+                        ctx.globalCompositeOperation = 'source-over';
+                        updateActiveButton(colorPaletteContainer, currentColor, 'color', 'color-button', 'color');
+                    }
+                    updateActiveButton(toolControlsContainer, currentTool, 'tool', 'tool-button', 'tool');
+                });
+                toolControlsContainer.appendChild(button);
+            });
+
+            clearButton.addEventListener('click', () => {
+                fillCanvasBackground(); 
+                addCurrentStateToHistory(); 
+            });
+
+            const undoButton = document.getElementById('undoButton');
+            const redoButton = document.getElementById('redoButton');
+            const saveButton = document.getElementById('saveButton');
+
+            undoButton.addEventListener('click', () => {
+                if (historyStep > 0) { 
+                    restoreStateFromHistory(historyStep - 1);
+                }
+            });
+            redoButton.addEventListener('click', () => {
+                if (historyStep < history.length - 1) { 
+                    restoreStateFromHistory(historyStep + 1);
+                }
+            });
+            saveButton.addEventListener('click', () => {
+                const dataURL = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = dataURL;
+                link.download = 'doodle-dash.png';
+                document.body.appendChild(link); 
+                link.click();
+                document.body.removeChild(link); 
+            });
+
+            function updateUndoRedoButtons() {
+                undoButton.disabled = historyStep <= 0; 
+                redoButton.disabled = historyStep >= history.length - 1; 
+            }
+
+            // --- Initial Setup ---
+            window.addEventListener('resize', () => {
+                isInitialResize = false; 
+                resizeCanvas();
+            });
+            
+            resizeCanvas(); 
+            isInitialResize = false; 
+
+            if (history.length === 0) { 
+                addCurrentStateToHistory();
+            }
+            
+            updateActiveButton(colorPaletteContainer, currentColor, 'color', 'color-button', 'color');
+            updateActiveButton(bgPaletteContainer, currentBackgroundColor, 'bgColor', 'bg-color-button', 'bg-color');
+            updateActiveButton(sizeControlsContainer, currentLineWidth, 'size', 'size-button', 'size');
+            updateActiveButton(toolControlsContainer, currentTool, 'tool', 'tool-button', 'tool');
+            updateUndoRedoButtons(); 
+        });
+    </script>
+
+</body>
+</html>
