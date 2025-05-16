@@ -8,3 +8,5 @@ The goal of this repo is to identify the current abilities of SOTA AI in low-fri
 Each game was coded entirely with Gemini through my prompting and suggestions.
 
 The games are likely full of bugs and are more proof-of-concept as to the current status of AI than functioning games or a demonstration of my personal skill.
+
+In addition to using Gemini to help create the games and scripts, I am now using OpenAI's Codex-1 Research Preview to fix bugs in this repo.
