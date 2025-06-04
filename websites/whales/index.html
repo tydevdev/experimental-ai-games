@@ -4,64 +4,66 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Whale Wonders</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      line-height: 1.6;
-      background: #f0f8ff;
-      color: #033;
-    }
-    header {
-      background: #0066cc;
-      color: #fff;
-      padding: 1rem;
-      text-align: center;
-    }
-    main {
-      padding: 1rem 2rem;
-      max-width: 800px;
-      margin: auto;
-    }
-    h2 {
-      color: #0066cc;
-      margin-top: 1.5rem;
-    }
-    footer {
-      text-align: center;
-      padding: 1rem;
-      background: #eee;
-      margin-top: 2rem;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <h1>Whale Wonders</h1>
-    <p>Discover the amazing world of whales</p>
+    <nav>
+      <a href="index.html" class="active">Home</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="facts.html">Facts</a>
+    </nav>
   </header>
   <main>
-    <section>
-      <h2>Introduction</h2>
-      <p>Whales are magnificent marine mammals known for their enormous size and incredible adaptations for life in the ocean. This site provides a brief overview of different whale species, their behaviors and their important role in ocean ecosystems.</p>
+    <section class="hero">
+      <h2>Welcome to the deep</h2>
+      <p>Explore the majesty of whales through photos, facts and sounds.</p>
+      <button id="themeToggle">Toggle Theme</button>
     </section>
+
     <section>
-      <h2>Major Species</h2>
-      <ul>
-        <li><strong>Blue Whale</strong> – The largest animal on Earth, reaching lengths over 100 feet.</li>
-        <li><strong>Humpback Whale</strong> – Famous for their haunting songs and spectacular breaching.</li>
-        <li><strong>Orca</strong> – Also called killer whales, these powerful predators live in complex social groups.</li>
-        <li><strong>Sperm Whale</strong> – Deep-diving giants known for their massive heads and intelligence.</li>
-      </ul>
+      <h2>Image Carousel</h2>
+      <div class="carousel">
+        <button class="prev">&#10094;</button>
+        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=60" alt="Whale 1">
+        <img src="https://images.unsplash.com/photo-1504893524553-b8553c4f3038?auto=format&fit=crop&w=1200&q=60" alt="Whale 2">
+        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=1200&q=60" alt="Whale 3">
+        <button class="next">&#10095;</button>
+      </div>
     </section>
+
     <section>
-      <h2>Conservation</h2>
-      <p>Many whale populations are recovering thanks to international protections, but threats like entanglement, ship strikes and climate change remain. Supporting marine conservation helps ensure these gentle giants thrive for generations to come.</p>
+      <h2>Fact of the Day</h2>
+      <div id="factCard"><span id="fact"></span></div>
+    </section>
+
+    <section>
+      <h2>Listen to Whales</h2>
+      <audio controls src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_f28459d71c.mp3?filename=whale-sounds-6115.mp3"></audio>
+    </section>
+
+    <section class="faq">
+      <h2>FAQ</h2>
+      <details>
+        <summary>Why do whales sing?</summary>
+        <p>Scientists believe singing plays a role in communication and mating.</p>
+      </details>
+      <details>
+        <summary>What is the largest whale?</summary>
+        <p>The blue whale is the largest known animal on Earth.</p>
+      </details>
+    </section>
+
+    <section>
+      <h2>Conservation Progress</h2>
+      <div class="progress"><span></span></div>
     </section>
   </main>
   <footer>
-    <p>Learn more about whales through books, documentaries and responsible whale-watching experiences.</p>
+    <p>Learn more about whales through books, documentaries and responsible whale watching experiences.</p>
   </footer>
+  <button id="toTop">&#8679;</button>
+  <script src="script.js"></script>
 </body>
 </html>

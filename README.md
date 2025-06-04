@@ -70,6 +70,7 @@ This project tracks which language model produced each major piece of code. The 
 
 - **2025-06-05:** Added the "Whale Wonders" informational site and updated the
   main menu with a new Websites category using **Codex**.
+- **2025-06-06:** Major upgrade to Whale Wonders with an interactive carousel, additional pages and new UI elements using **Codex**.
 
 Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
 
