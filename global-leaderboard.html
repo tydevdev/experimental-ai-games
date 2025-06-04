@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Global Leaderboard</title>
   <style>
-    body { font-family: sans-serif; padding: 1rem; }
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+      background: #fff;
+      color: #000;
+    }
     h1 { text-align: center; }
     ol { list-style: none; padding: 0; max-width: 400px; margin: 0 auto; }
     li { display: flex; justify-content: space-between; border-bottom: 1px solid #ccc; padding: 0.25rem 0; }
@@ -14,15 +19,17 @@
     .name { flex-grow: 1; text-align: left; }
     .score { font-weight: bold; }
   </style>
-  <script src="leaderboard.js"></script>
 </head>
 <body>
   <h1>Global Leaderboard</h1>
   <ol id="board"></ol>
+  <script src="leaderboard.js"></script>
   <script>
-    const list = document.getElementById('board');
-    const entries = GlobalLeaderboard.load();
-    renderLeaderboardList(list, entries, true);
+    window.addEventListener('DOMContentLoaded', () => {
+      const list = document.getElementById('board');
+      const entries = GlobalLeaderboard.load();
+      renderLeaderboardList(list, entries, true);
+    });
   </script>
 </body>
 </html>

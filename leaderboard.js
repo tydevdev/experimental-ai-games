@@ -26,7 +26,11 @@ class Leaderboard {
     board.sort((a, b) => b.score - a.score);
     const trimmed = board.slice(0, this.maxEntries);
     this.save(trimmed);
-    GlobalLeaderboard.add(this.gameKey, name, score);
+    // Only record in the global leaderboard if this score actually
+    // made it onto the local leaderboard after trimming
+    if (trimmed.some(e => e.name === name && e.score === score)) {
+      GlobalLeaderboard.add(this.gameKey, name, score);
+    }
     return trimmed;
   }
   qualifies(score) {
@@ -49,6 +53,12 @@ const GlobalLeaderboard = {
       return [];
     }
   },
+  qualifies(score) {
+    const board = this.load();
+    if (score <= 0) return false;
+    if (board.length < this.maxEntries) return true;
+    return score > board[board.length - 1].score;
+  },
   save(entries) {
     try {
       localStorage.setItem(this.key, JSON.stringify(entries));
@@ -57,6 +67,9 @@ const GlobalLeaderboard = {
     }
   },
   add(game, name, score) {
+    if (!this.qualifies(score)) {
+      return this.load();
+    }
     const board = this.load();
     board.push({ game, name, score });
     board.sort((a, b) => b.score - a.score);
