@@ -5,14 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Experimental AI Playground</title>
   <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap");
     body {
       margin: 0;
-      font-family: sans-serif;
-      background: #fafafa;
-      color: #222;
+      font-family: "Inter", sans-serif;
+      background: linear-gradient(135deg, #4e54c8, #8f94fb);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
-    #menu, #gameContainer {
+    #gameContainer {
       width: 100vw;
       height: 100vh;
     }
@@ -21,8 +26,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
+      background: rgba(255,255,255,0.9);
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
       padding: 2rem;
+      gap: 1rem;
     }
 
     #menu h1 {
@@ -35,10 +44,11 @@
       font-size: 0.9rem;
       color: #555;
       line-height: 1.4;
-      background: #fff;
+      background: rgba(255,255,255,0.85);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       padding: 1rem;
       border-radius: 4px;
-      border: 1px solid #ddd;
+      border: none;
     }
 
     .category {
@@ -62,15 +72,15 @@
     .category a {
       text-decoration: none;
       padding: 0.5rem 1rem;
-      border: 2px solid #0066cc;
       border-radius: 4px;
-      color: #0066cc;
+      background: #4e54c8;
+      color: #fff;
       display: inline-block;
-      background: #fff;
+      transition: background 0.2s ease;
     }
 
     .category a:hover {
-      background: #e6f0ff;
+      background: #5f6bea;
     }
 
     #gameContainer {
