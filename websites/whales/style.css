@@ -1,0 +1,159 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+:root {
+  --bg: #f0f8ff;
+  --text: #033;
+  --accent: #0066cc;
+  --light-bg: #fff;
+}
+
+body {
+  font-family: 'Inter', Arial, sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+body.dark {
+  --bg: #022;
+  --text: #eee;
+  --accent: #61dafb;
+  --light-bg: #111;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  background: var(--accent);
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
+  position: relative;
+}
+
+nav {
+  margin-top: 0.5rem;
+}
+
+nav a {
+  color: #fff;
+  margin: 0 0.5rem;
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+nav a.active,
+nav a:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+main {
+  padding: 1rem 2rem;
+  max-width: 800px;
+  margin: auto;
+}
+
+h2 {
+  color: var(--accent);
+  margin-top: 1.5rem;
+}
+
+footer {
+  text-align: center;
+  padding: 1rem;
+  background: #eee;
+  margin-top: 2rem;
+}
+
+/* Image carousel */
+.carousel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.carousel img {
+  width: 100%;
+  display: none;
+}
+
+.carousel img.active {
+  display: block;
+}
+
+.carousel button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.carousel button.prev { left: 0; }
+.carousel button.next { right: 0; }
+
+/* grid for gallery */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
+  gap: 1rem;
+}
+
+.grid img {
+  width: 100%;
+  border-radius: 6px;
+}
+
+/* Fact card */
+#factCard {
+  background: var(--light-bg);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  margin-top: 1rem;
+}
+
+/* FAQ */
+.faq details {
+  margin-top: 0.5rem;
+  background: var(--light-bg);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+}
+
+/* Progress bar */
+.progress {
+  background: #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.progress span {
+  display: block;
+  height: 1rem;
+  width: 0;
+  background: var(--accent);
+}
+
+/* Scroll to top */
+#toTop {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
