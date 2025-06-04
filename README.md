@@ -43,3 +43,17 @@ simple local web server (for example `python3 -m http.server`) is recommended.
 
 The leaderboard system uses `localStorage` to persist scores locally and across
 games. A global leaderboard page aggregates results from individual games.
+
+## AI Development Log
+
+This project tracks which language model produced each major piece of code. The log below summarizes notable updates.
+
+- **2025-05-12:** Initial Sudoku prototype and index page created with **Gemini**.
+- **2025-05-15:** Added Whack‑A‑Moji, Tap Blitz!, Doodle Dash, Tetris, Duck Council and Fruit Fusion using **Gemini**.
+- **2025-05-16:** Minor fixes, renames and README updates driven by **Gemini**.
+- **2025-06-04:** Added a global leaderboard and addressed various bugs with **Codex** assistance.
+- **2025-06-04:** Introduced the **Memory Match** game, built entirely with **Codex**.
+- **2025-06-04:** Codex adjustments to the global leaderboard and Fruit Fusion difficulty plus expanded documentation.
+
+Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
+
