@@ -395,7 +395,7 @@
         <div class="game-controls-bar">
             <button id="pause-game-button" class="button">Pause</button>
             <button id="toggle-sound-button" class="button">Sound: On</button>
-            <button id="toggle-difficulty-button" class="button">Normal G</button>
+            <button id="toggle-difficulty-button" class="button">Normal</button>
         </div>
         <div class="game-controls-info">Move to Aim, Click to Drop</div>
     </div>
@@ -1226,10 +1226,10 @@
         toggleDifficultyButton.onclick = () => {
             if (currentDifficulty === 'normal') {
                 currentDifficulty = 'hard';
-                toggleDifficultyButton.textContent = "Hard G";
+                toggleDifficultyButton.textContent = "Hard";
             } else {
                 currentDifficulty = 'normal';
-                toggleDifficultyButton.textContent = "Normal G";
+                toggleDifficultyButton.textContent = "Normal";
             }
             toggleDifficultyButton.classList.toggle('active', currentDifficulty === 'hard');
             if (engine) engine.gravity.y = currentDifficulty === 'hard' ? hardGravityValue : normalGravityValue;
@@ -1238,7 +1238,7 @@
         function loadDifficultyPreference() {
             const savedDiff = localStorage.getItem('fruitFusionDifficulty_v2');
             currentDifficulty = savedDiff === 'hard' ? 'hard' : 'normal';
-             toggleDifficultyButton.textContent = currentDifficulty === 'hard' ? "Hard G" : "Normal G";
+             toggleDifficultyButton.textContent = currentDifficulty === 'hard' ? "Hard" : "Normal";
             toggleDifficultyButton.classList.toggle('active', currentDifficulty === 'hard');
         }
 

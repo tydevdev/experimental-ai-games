@@ -1,4 +1,4 @@
-# test-gemini-game
+# experimental-gemini-games
 
 
 
