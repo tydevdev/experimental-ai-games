@@ -6,6 +6,7 @@
     <title>Fruit Fusion Fun - Deluxe</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.min.js"></script>
+    <script src="leaderboard.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -540,7 +541,7 @@
         let isGameOver = false;
         let isGamePaused = false; 
         let dropCooldownTimeoutId = null;
-        let leaderboard = [];
+        const leaderboardManager = new Leaderboard('fruitFusion', MAX_LEADERBOARD_ENTRIES);
         let globalSoundsEnabled = true; 
         let currentDifficulty = 'normal'; 
         let normalGravityValue = 0.9;
@@ -1160,36 +1161,26 @@
         }
 
         function loadLeaderboard() {
-            const storedLeaderboard = localStorage.getItem('fruitFusionLeaderboard_v2');
-            leaderboard = storedLeaderboard ? JSON.parse(storedLeaderboard) : [];
-        }
-        function saveLeaderboard() {
-            localStorage.setItem('fruitFusionLeaderboard_v2', JSON.stringify(leaderboard));
+            return leaderboardManager.load();
         }
         function addScoreToLeaderboard(initials, newScore) {
-            leaderboard.push({ initials, score: newScore });
-            leaderboard.sort((a, b) => b.score - a.score); 
-            leaderboard = leaderboard.slice(0, MAX_LEADERBOARD_ENTRIES); 
-            saveLeaderboard();
+            leaderboardManager.add(initials, newScore);
         }
         function displayLeaderboard() {
-            loadLeaderboard();
-            leaderboardList.innerHTML = ''; 
-            if (leaderboard.length === 0) {
+            const board = leaderboardManager.load();
+            leaderboardList.innerHTML = '';
+            if (board.length === 0) {
                 leaderboardList.innerHTML = '<li>No scores yet! Be the first!</li>';
                 return;
             }
-            leaderboard.forEach((entry, index) => {
+            board.forEach((entry, index) => {
                 const li = document.createElement('li');
-                li.innerHTML = `<span class="rank">${index + 1}.</span> <span class="initials">${entry.initials}</span> <span class="score">${entry.score}</span>`;
+                li.innerHTML = `<span class="rank">${index + 1}.</span> <span class="initials">${entry.name || entry.initials}</span> <span class="score">${entry.score}</span>`;
                 leaderboardList.appendChild(li);
             });
         }
         function checkIfQualifiesForLeaderboard(currentScore) {
-            loadLeaderboard(); 
-            if (currentScore <= 0) return false; 
-            if (leaderboard.length < MAX_LEADERBOARD_ENTRIES) return true;
-            return currentScore > leaderboard[leaderboard.length - 1].score;
+            return leaderboardManager.qualifies(currentScore);
         }
 
         startGameButton.onclick = () => {

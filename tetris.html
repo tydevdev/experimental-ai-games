@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tetris Deluxe</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="leaderboard.js"></script>
     <style>
         :root {
             --body-bg: #1a1a2e;
@@ -388,14 +389,15 @@
             'Z': { shape: [[1, 1, 0], [0, 1, 1]], color: '#f00000' }
         };
         const PIECE_KEYS = Object.keys(TETROMINOES);
-        const MAX_HIGH_SCORES = 5;
+        const MAX_LEADERBOARD_ENTRIES = 5;
 
         // Game State
         let board, currentPiece, nextPiece, score, level, linesCleared, dropCounter, dropInterval, lastTime;
         let animationFrameId = null;
         let gamePaused = true;
         let gameOver = false;
-        let highScores = [];
+        const leaderboardManager = new Leaderboard('tetris', MAX_LEADERBOARD_ENTRIES);
+        let highScores = leaderboardManager.load();
 
         // Touch Controls Variables
         let touchstartX = 0, touchstartY = 0, touchendX = 0, touchendY = 0;
@@ -634,16 +636,13 @@
         }
 
         function loadHighScores() {
-            try {
-                const storedScores = localStorage.getItem('tetrisHighScoresDeluxe');
-                highScores = storedScores ? JSON.parse(storedScores) : [];
-            } catch (error) { console.error("Error loading high scores:", error); highScores = []; }
+            highScores = leaderboardManager.load();
             displayHighScores();
         }
         function saveHighScore(initials, newScore) {
-            highScores.push({ initials, score: newScore }); highScores.sort((a, b) => b.score - a.score);
-            highScores = highScores.slice(0, MAX_HIGH_SCORES);
-            localStorage.setItem('tetrisHighScoresDeluxe', JSON.stringify(highScores)); displayHighScores();
+            leaderboardManager.add(initials, newScore);
+            highScores = leaderboardManager.load();
+            displayHighScores();
         }
         function displayHighScores() {
             highScoreListElement.innerHTML = '';
@@ -655,7 +654,8 @@
             });
         }
         function checkHighScore() {
-            const isHighScore = highScores.length < MAX_HIGH_SCORES || score > highScores[highScores.length - 1].score;
+            highScores = leaderboardManager.load();
+            const isHighScore = highScores.length < MAX_LEADERBOARD_ENTRIES || score > highScores[highScores.length - 1].score;
             if (isHighScore && score > 0) {
                 initialsInput.value = ''; initialsPrompt.style.display = 'block'; initialsInput.focus();
             } else { showMessage("Game Over! Score: " + score, "Play Again", resetGame); }
