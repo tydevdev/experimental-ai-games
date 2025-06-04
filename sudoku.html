@@ -686,7 +686,20 @@
             const key = event.key;
 
             // Handle navigation and deletion keys first
-            if (key === 'Enter') {
+            if (key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown') {
+                event.preventDefault();
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                let newRow = row;
+                let newCol = col;
+                if (key === 'ArrowLeft') newCol = (col + 8) % 9;
+                if (key === 'ArrowRight') newCol = (col + 1) % 9;
+                if (key === 'ArrowUp') newRow = (row + 8) % 9;
+                if (key === 'ArrowDown') newRow = (row + 1) % 9;
+                const nextInput = gridElement.querySelector(`.sudoku-cell[data-row="${newRow}"][data-col="${newCol}"] input`);
+                if (nextInput) nextInput.focus();
+                return;
+            } else if (key === 'Enter') {
                 event.preventDefault();
                 focusNextInput(inputElement);
                 return; // Stop processing here

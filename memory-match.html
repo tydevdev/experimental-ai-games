@@ -76,11 +76,14 @@
             const items = [...emojis, ...emojis]
                 .sort(() => Math.random() - 0.5);
             board.innerHTML = '';
-            items.forEach(sym => {
+            items.forEach((sym, idx) => {
                 const div = document.createElement('div');
                 div.className = 'card';
                 div.dataset.symbol = sym;
+                div.dataset.index = idx;
+                div.tabIndex = 0;
                 div.addEventListener('click', onCardClick);
+                div.addEventListener('keydown', (e) => handleCardKeydown(e, idx));
                 board.appendChild(div);
             });
         }
@@ -116,6 +119,26 @@
         function hide(card) {
             card.classList.remove('revealed');
             card.textContent = '';
+        }
+
+        function handleCardKeydown(event, index) {
+            const key = event.key;
+            const cards = Array.from(board.querySelectorAll('.card'));
+            const total = cards.length;
+            if (key === 'Enter' || key === ' ') {
+                event.preventDefault();
+                onCardClick({ currentTarget: event.currentTarget });
+            } else if (key.startsWith('Arrow')) {
+                event.preventDefault();
+                let row = Math.floor(index / 4);
+                let col = index % 4;
+                if (key === 'ArrowRight') col = (col + 1) % 4;
+                if (key === 'ArrowLeft') col = (col + 3) % 4;
+                if (key === 'ArrowDown') row = (row + 1) % Math.ceil(total / 4);
+                if (key === 'ArrowUp') row = (row + Math.ceil(total / 4) - 1) % Math.ceil(total / 4);
+                const newIndex = row * 4 + col;
+                if (cards[newIndex]) cards[newIndex].focus();
+            }
         }
 
         resetBtn.addEventListener('click', setup);

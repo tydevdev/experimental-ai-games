@@ -774,6 +774,24 @@
             canvasWrapper.addEventListener('touchstart', handleTouchStart);
             canvasWrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
             canvasWrapper.addEventListener('touchend', handleTouchEnd);
+
+            // --- Keyboard Controls ---
+            document.addEventListener('keydown', (e) => {
+                if (isGameOver || isGamePaused) return;
+                switch (e.key) {
+                    case 'ArrowLeft':
+                        moveAimingFruitBy(-20);
+                        break;
+                    case 'ArrowRight':
+                        moveAimingFruitBy(20);
+                        break;
+                    case 'ArrowDown':
+                    case ' ': // Space
+                        e.preventDefault();
+                        dropFruit();
+                        break;
+                }
+            });
             
             aimingFruitData = selectNewRandomFruit();
             nextFruitInQueueData = selectNewRandomFruit();
@@ -858,14 +876,19 @@
 
 
         function positionAimingFruitPreview(mouseX) {
-            if (!aimingFruitData || !currentAimerMatterBody || !aimingFruitPreviewHTML) return; 
+            if (!aimingFruitData || !currentAimerMatterBody || !aimingFruitPreviewHTML) return;
             const previewRadius = aimingFruitData.radius;
             const x = Math.max(previewRadius, Math.min(CANVAS_WIDTH - previewRadius, mouseX));
-            
-            aimingFruitPreviewHTML.style.left = `${x - previewRadius}px`;
-            aimingFruitPreviewHTML.style.top = `${AIM_LINE_Y - previewRadius}px`; 
 
-            Body.setPosition(currentAimerMatterBody, { x: x, y: AIM_LINE_Y }); 
+            aimingFruitPreviewHTML.style.left = `${x - previewRadius}px`;
+            aimingFruitPreviewHTML.style.top = `${AIM_LINE_Y - previewRadius}px`;
+
+            Body.setPosition(currentAimerMatterBody, { x: x, y: AIM_LINE_Y });
+        }
+
+        function moveAimingFruitBy(delta) {
+            if (!currentAimerMatterBody || isGameOver || isGamePaused) return;
+            positionAimingFruitPreview(currentAimerMatterBody.position.x + delta);
         }
 
         function dropFruit() {
