@@ -3,70 +3,134 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>My Mini-Games Hub</title>
+  <title>Experimental AI Playground</title>
   <style>
-    body { margin:0; font-family:sans-serif; }
-    #menu, #gameContainer { width:100vw; height:100vh; }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #fafafa;
+      color: #222;
+    }
+
+    #menu, #gameContainer {
+      width: 100vw;
+      height: 100vh;
+    }
+
     #menu {
-      display:flex; flex-direction:column; align-items:center;
-      padding:2rem; background:#f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 2rem;
     }
-    #menu h1 { margin-bottom:0.5rem; }
+
+    #menu h1 {
+      margin-bottom: 0.5rem;
+    }
+
     #disclaimer {
-      max-width:600px; margin-bottom:1.5rem;
-      font-size:0.9rem; color:#555; line-height:1.4;
-      background:#fff; padding:1rem; border-radius:4px;
-      border:1px solid #ddd;
+      max-width: 600px;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      color: #555;
+      line-height: 1.4;
+      background: #fff;
+      padding: 1rem;
+      border-radius: 4px;
+      border: 1px solid #ddd;
     }
-    #menu ul { list-style:none; padding:0; }
-    #menu li { margin:0.5rem 0; }
-    #menu a {
-      text-decoration:none; padding:0.5rem 1rem;
-      border:2px solid #0066cc; border-radius:4px;
-      color:#0066cc; display:inline-block;
+
+    .category {
+      margin-top: 1.5rem;
+      text-align: center;
     }
-    #menu a:hover { background:#e6f0ff; }
+
+    .category ul {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .category li {
+      margin: 0.25rem;
+    }
+
+    .category a {
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border: 2px solid #0066cc;
+      border-radius: 4px;
+      color: #0066cc;
+      display: inline-block;
+      background: #fff;
+    }
+
+    .category a:hover {
+      background: #e6f0ff;
+    }
+
     #gameContainer {
-      display:none; position:relative; background:#000;
+      display: none;
+      position: relative;
+      background: #000;
     }
+
     #backButton {
-      position:absolute; top:1rem; left:1rem;
-      z-index:10; padding:0.5rem 1rem;
-      background:#fff; border:2px solid #0066cc;
-      border-radius:4px; cursor:pointer;
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      z-index: 10;
+      padding: 0.5rem 1rem;
+      background: #fff;
+      border: 2px solid #0066cc;
+      border-radius: 4px;
+      cursor: pointer;
     }
+
     #gameFrame {
-      width:100%; height:100%; border:none;
+      width: 100%;
+      height: 100%;
+      border: none;
     }
   </style>
 </head>
 <body>
 
-  <!-- ▶️ Game Menu -->
+  <!-- ▶️ Experience Menu -->
   <div id="menu">
-    <h1>🎮 Experimental AI Games</h1>
+    <h1>🧪 Experimental AI Playground</h1>
 
     <div id="disclaimer">
       <strong>Disclaimer:</strong><br>
-      This repo is a collection of games Gemini 2.5 Pro (preview) I/O 05-12-25 Edition and I have collaborated on after a couple of hours each.  
-      The goal of this repo is to identify the current abilities of SOTA AI in low-friction creation of functional coding projects, like simple web games.  
-      Each game was initially coded entirely with Gemini through my prompting and suggestions.
-      Since then I've also been using OpenAI's Codex-1 Research Preview to help track down and fix bugs.<br><br>
-      The games are likely still full of bugs and are more proof-of-concept as to the current status of AI than functioning games or a demonstration of my personal skill.
+      This repo collects tiny prototypes built with help from the Gemini 2.5 Pro (preview) model and polished with OpenAI Codex.
+      They are meant as experiments to see how quickly AI can produce functional code.
+      Expect rough edges and bugs&mdash;these are proof-of-concept demos, not polished products.
     </div>
 
-    <ul>
-      <li><a href="sudoku.html">Sudoku</a></li>
-      <li><a href="whack-a-mole.html">Super Duper Whack-A-Moji</a></li>
-      <li><a href="tap-blitz.html">Tap Blitz!</a></li>
-      <li><a href="doodle-dash.html">Doodle Dash</a></li>
-      <li><a href="tetris.html">Tetris</a></li>
-      <li><a href="duck-council.html">Duck Council</a></li>
-      <li><a href="fruit-fusion.html">Fruit Fusion</a></li>
-      <li><a href="memory-match.html">Memory Match</a></li>
-      <li><a href="global-leaderboard.html">Global Leaderboard</a></li>
-      <!-- …add one <li> per game-folder -->
-    </ul>
+    <div class="category">
+      <h2>Games</h2>
+      <ul>
+        <li><a href="sudoku.html">Sudoku</a></li>
+        <li><a href="whack-a-mole.html">Super Duper Whack-A-Moji</a></li>
+        <li><a href="tap-blitz.html">Tap Blitz!</a></li>
+        <li><a href="tetris.html">Tetris</a></li>
+        <li><a href="fruit-fusion.html">Fruit Fusion</a></li>
+        <li><a href="memory-match.html">Memory Match</a></li>
+      </ul>
+    </div>
+
+    <div class="category">
+      <h2>Other Experiences</h2>
+      <ul>
+        <li><a href="doodle-dash.html">Doodle Dash</a></li>
+        <li><a href="duck-council.html">Duck Council</a></li>
+        <li><a href="global-leaderboard.html">Global Leaderboard</a></li>
+      </ul>
+    </div>
   </div>
 
   <!-- 🕹️ Embedded Game Window -->
