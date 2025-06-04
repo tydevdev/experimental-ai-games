@@ -630,6 +630,8 @@
         }
 
         function initializeGame() {
+            // Ensure the latest difficulty setting is applied before a new game starts
+            loadDifficultyPreference();
             console.log("[DEBUG] INIT: Initializing game...");
             isGameOver = false;
             isGamePaused = false;
