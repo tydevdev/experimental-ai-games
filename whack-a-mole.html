@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="leaderboard.js"></script>
     <style>
         /* --- Base Styles --- */
         :root {
@@ -555,7 +556,9 @@
         let currentDifficulty = difficulties.medium;
         let score = 0; let timeLeft = 0; let timerId = null; let faceTimerId = null;
         let gameActive = false; let currentScreen = 'menu'; let totalXP = 0;
-        let leaderboard = []; let unlockedThemes = ['default']; let selectedTheme = 'default';
+        const leaderboardManager = new Leaderboard('whackAMole', MAX_LEADERBOARD_ENTRIES);
+        let leaderboard = leaderboardManager.load();
+        let unlockedThemes = ['default']; let selectedTheme = 'default';
         let unlockedRewards = []; let currentTitle = "";
         let audioInitialized = false; let soundEnabled = true;
         let selectedMusicTrackId = 'chillGroove'; 
@@ -1107,8 +1110,9 @@
             displayThemes();  
             saveData();
 
+            leaderboard = leaderboardManager.load();
             const lowestLeaderboardScore = leaderboard.length < MAX_LEADERBOARD_ENTRIES ? 0 : leaderboard[leaderboard.length - 1].score;
-            if (score > 0 && score >= lowestLeaderboardScore) { 
+            if (score > 0 && score >= lowestLeaderboardScore) {
                 gameOverInput.style.display = 'block'; nameInput.value = ''; nameInput.focus();
             } else {
                 gameOverInput.style.display = 'none';
@@ -1132,13 +1136,14 @@
              showScreen('menu');
         }
 
-        function addScoreToLeaderboard(name, scoreVal) { 
-            leaderboard.push({ name: name.toUpperCase(), score: scoreVal });
-            leaderboard.sort((a, b) => b.score - a.score);
-            leaderboard = leaderboard.slice(0, MAX_LEADERBOARD_ENTRIES);
-            saveData(); displayLeaderboard();
+        function addScoreToLeaderboard(name, scoreVal) {
+            leaderboardManager.add(name, scoreVal);
+            leaderboard = leaderboardManager.load();
+            saveData();
+            displayLeaderboard();
         }
         function displayLeaderboard() {
+            leaderboard = leaderboardManager.load();
             leaderboardList.innerHTML = leaderboard.length === 0 ? '<li>No scores yet!</li>' :
                 leaderboard.map((entry, index) => `<li><span>${index + 1}. ${entry.name}</span><span class="score">${entry.score}</span></li>`).join('');
         }
@@ -1264,8 +1269,8 @@
 
         function saveData() {
             try {
-                localStorage.setItem('whackGameDeluxeData_v4', JSON.stringify({ 
-                    totalXP, leaderboard, unlockedThemes, selectedTheme, unlockedRewards, currentTitle, soundEnabled, playerStats, selectedMusicTrackId
+                localStorage.setItem('whackGameDeluxeData_v4', JSON.stringify({
+                    totalXP, unlockedThemes, selectedTheme, unlockedRewards, currentTitle, soundEnabled, playerStats, selectedMusicTrackId
                 }));
             } catch (e) { console.error("Failed to save data:", e); }
         }
@@ -1273,12 +1278,13 @@
             try {
                 const data = JSON.parse(localStorage.getItem('whackGameDeluxeData_v4'));
                 if (data) {
-                    totalXP = data.totalXP || 0; leaderboard = data.leaderboard || [];
+                    totalXP = data.totalXP || 0;
                     unlockedThemes = data.unlockedThemes || ['default']; selectedTheme = data.selectedTheme || 'default';
                     unlockedRewards = data.unlockedRewards || []; currentTitle = data.currentTitle || "";
                     soundEnabled = typeof data.soundEnabled === 'boolean' ? data.soundEnabled : true;
                     playerStats = data.playerStats || { totalGamesPlayed: 0, totalWhacks: 0, totalScore: 0, difficultyPlays: { easy: 0, medium: 0, hard: 0, marathon: 0 }};
                     selectedMusicTrackId = data.selectedMusicTrackId || 'chillGroove';
+                    if (data.leaderboard) leaderboardManager.save(data.leaderboard);
                 }
                  // TEMPORARY: Grant XP for testing
                  totalXP = 2500; 
@@ -1310,7 +1316,9 @@
         interactionOverlay.addEventListener('click', initAudio, { once: true });
 
         function initializeGame() {
-            loadData(); createGrid(); setupAnimatedTitle();
+            loadData();
+            leaderboard = leaderboardManager.load();
+            createGrid(); setupAnimatedTitle();
             if (themes[selectedTheme] && themes[selectedTheme].className) document.body.classList.add(themes[selectedTheme].className);
             updateMenuUI(); 
             displayRewards(); 
