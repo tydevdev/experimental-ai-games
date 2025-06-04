@@ -1,12 +1,18 @@
-# test-gemini-game
+# Gemini Game Experiments
 
+This repo collects a handful of small web games created with help from the
+Gemini 2.5 Pro (preview) model. The purpose is to explore how quickly AI can
+bootstrap functional game prototypes.
 
+Each game was initially produced with Gemini and later refined with OpenAI's
+Codex-1 Research Preview. They remain fairly rough around the edges, but serve
+as a useful snapshot of modern AI coding ability.
 
+## Running the games
 
-This repo is a collection of games Gemini 2.5 Pro (preview) I/O 05-12-25 Edition and I have collaborated on after a couple of hours each.
-The goal of this repo is to identify the current abilities of SOTA AI in low-friction creation of functional coding projects, like simple web games.
-Each game was initially coded entirely with Gemini through my prompting and suggestions.
+Open `index.html` in a browser to access the menu of all games. Some browsers
+restrict `localStorage` when opening files directly from disk, so launching a
+simple local web server (for example `python3 -m http.server`) is recommended.
 
-The games are likely full of bugs and are more proof-of-concept as to the current status of AI than functioning games or a demonstration of my personal skill.
-
-In addition to using Gemini to help create the games and scripts, I now use OpenAI's Codex-1 Research Preview to identify and fix bugs throughout the repo.
+The leaderboard system uses `localStorage` to persist scores locally and across
+games. A global leaderboard page aggregates results from individual games.

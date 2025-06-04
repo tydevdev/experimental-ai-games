@@ -60,14 +60,25 @@ const GlobalLeaderboard = {
     const board = this.load();
     board.push({ game, name, score });
     board.sort((a, b) => b.score - a.score);
-    this.save(board.slice(0, this.maxEntries));
+    const trimmed = board.slice(0, this.maxEntries);
+    this.save(trimmed);
+    return trimmed;
   }
 };
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 function renderLeaderboardList(element, entries, showGame = false) {
   element.innerHTML = entries.length === 0 ? '<li>No scores yet!</li>' :
     entries.map((e, i) => {
-      const gamePart = showGame ? `<span class="game">${e.game}</span> ` : '';
-      return `<li><span class="rank">${i + 1}.</span> ${gamePart}<span class="name">${e.name}</span> <span class="score">${e.score}</span></li>`;
+      const gamePart = showGame ? `<span class="game">${escapeHtml(e.game)}</span> ` : '';
+      return `<li><span class="rank">${i + 1}.</span> ${gamePart}<span class="name">${escapeHtml(e.name)}</span> <span class="score">${e.score}</span></li>`;
     }).join('');
 }
