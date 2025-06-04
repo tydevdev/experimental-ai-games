@@ -1,4 +1,4 @@
-# Gemini Game Experiments
+# Experimental AI Games
 
 This repo collects a handful of small web games created with help from the
 Gemini 2.5 Pro (preview) model. The purpose is to explore how quickly AI can
