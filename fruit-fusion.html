@@ -768,6 +768,7 @@
             canvasWrapper.addEventListener('pointerdown', setupSoundsOnFirstInteraction, { once: true });
             canvasWrapper.addEventListener('mousemove', handleMouseMove);
             canvasWrapper.addEventListener('click', handleCanvasClick);
+            canvasWrapper.addEventListener('touchstart', handleTouchStart);
             canvasWrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
             canvasWrapper.addEventListener('touchend', handleTouchEnd);
             
@@ -920,8 +921,18 @@
         }
 
         function handleCanvasClick() {
-            if (currentAimerMatterBody && aimingFruitData && canDrop && !isGameOver && !isGamePaused) { 
+            if (currentAimerMatterBody && aimingFruitData && canDrop && !isGameOver && !isGamePaused) {
                 dropFruit();
+            }
+        }
+
+        function handleTouchStart(event) {
+            if (!currentAimerMatterBody || isGameOver || !aimingFruitData || isGamePaused || !canvasWrapper) return;
+            if (event.touches.length > 0) {
+                const touch = event.touches[0];
+                const rect = canvasWrapper.getBoundingClientRect();
+                const touchX = touch.clientX - rect.left;
+                positionAimingFruitPreview(touchX);
             }
         }
         
