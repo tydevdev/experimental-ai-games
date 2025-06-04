@@ -37,6 +37,10 @@ experiments built with the same AI-assisted approach.
 - **Duck Council** – Ask a question and receive a humorous fortune from a
   council of judgmental ducks.
 
+## Websites
+
+- **Whale Wonders** – A simple informational site celebrating whales and their conservation.
+
 Codex also proved valuable for iterating on bug fixes across the whole repo,
 catching edge cases that Gemini missed and tightening up the JavaScript.
 
@@ -63,6 +67,9 @@ This project tracks which language model produced each major piece of code. The 
 
 - **2025-06-04:** Refreshed the landing page and README with separate
   "experiences" section using **Codex**.
+
+- **2025-06-05:** Added the "Whale Wonders" informational site and updated the
+  main menu with a new Websites category using **Codex**.
 
 Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
 
