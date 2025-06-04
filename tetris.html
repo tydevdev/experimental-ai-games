@@ -681,6 +681,33 @@
         startBtn.addEventListener('click', () => { if (gameOver) resetGame(); else togglePause(); });
         messageBtn.addEventListener('click', hideMessage);
 
+        // --- Keyboard Controls ---
+        document.addEventListener('keydown', (e) => {
+            if (gamePaused || gameOver) return;
+            switch (e.key) {
+                case 'ArrowLeft':
+                    movePiece(-1, 0);
+                    break;
+                case 'ArrowRight':
+                    movePiece(1, 0);
+                    break;
+                case 'ArrowDown':
+                    pieceDrop();
+                    break;
+                case 'ArrowUp':
+                    attemptRotate();
+                    break;
+                case ' ': // Space for hard drop
+                    e.preventDefault();
+                    hardDrop();
+                    break;
+                case 'p':
+                case 'P':
+                    togglePause();
+                    break;
+            }
+        });
+
         function togglePause() {
             if (gameOver) return;
             gamePaused = !gamePaused;
