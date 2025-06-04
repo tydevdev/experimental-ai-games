@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Match Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #222;
+            color: #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #ff0080;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(4, 80px);
+            grid-gap: 15px;
+        }
+        .card {
+            width: 80px;
+            height: 80px;
+            background: #444;
+            border: 2px solid #ff0080;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        .card.revealed {
+            background: #fff;
+            color: #000;
+            cursor: default;
+        }
+        #reset {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: 2px solid #ff0080;
+            background: #222;
+            color: #eee;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        #reset:hover {
+            background: #ff0080;
+            color: #222;
+        }
+    </style>
+</head>
+<body>
+    <h1>Memory Match</h1>
+    <div id="board"></div>
+    <button id="reset">Restart</button>
+
+    <script>
+        const emojis = ['🐶','🐱','🐭','🦊','🐼','🐵'];
+        const board = document.getElementById('board');
+        const resetBtn = document.getElementById('reset');
+
+        let first = null;
+        let lock = false;
+
+        function setup() {
+            const items = [...emojis, ...emojis]
+                .sort(() => Math.random() - 0.5);
+            board.innerHTML = '';
+            items.forEach(sym => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.dataset.symbol = sym;
+                div.addEventListener('click', onCardClick);
+                board.appendChild(div);
+            });
+        }
+
+        function onCardClick(e) {
+            const card = e.currentTarget;
+            if (lock || card.classList.contains('revealed')) return;
+            reveal(card);
+            if (!first) {
+                first = card;
+            } else {
+                if (first.dataset.symbol === card.dataset.symbol) {
+                    first.removeEventListener('click', onCardClick);
+                    card.removeEventListener('click', onCardClick);
+                    first = null;
+                } else {
+                    lock = true;
+                    setTimeout(() => {
+                        hide(card);
+                        hide(first);
+                        first = null;
+                        lock = false;
+                    }, 1000);
+                }
+            }
+        }
+
+        function reveal(card) {
+            card.classList.add('revealed');
+            card.textContent = card.dataset.symbol;
+        }
+
+        function hide(card) {
+            card.classList.remove('revealed');
+            card.textContent = '';
+        }
+
+        resetBtn.addEventListener('click', setup);
+        setup();
+    </script>
+</body>
+</html>
