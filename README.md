@@ -64,5 +64,7 @@ This project tracks which language model produced each major piece of code. The 
 - **2025-06-04:** Refreshed the landing page and README with separate
   "experiences" section using **Codex**.
 
+- **2025-06-05:** Enhanced the landing page with emoji game cards and updated README using **Codex**.
+
 Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
 

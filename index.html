@@ -56,31 +56,37 @@
       text-align: center;
     }
 
-    .category ul {
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 1rem;
       list-style: none;
       padding: 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      justify-content: center;
+      justify-items: center;
     }
 
-    .category li {
-      margin: 0.25rem;
-    }
-
-    .category a {
+    .card {
       text-decoration: none;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      background: #4e54c8;
-      color: #fff;
-      display: inline-block;
-      transition: background 0.2s ease;
+      width: 120px;
+      padding: 1rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .category a:hover {
-      background: #5f6bea;
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .card .icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
     }
 
     #gameContainer {
@@ -123,23 +129,23 @@
 
     <div class="category">
       <h2>Games</h2>
-      <ul>
-        <li><a href="sudoku.html">Sudoku</a></li>
-        <li><a href="whack-a-mole.html">Super Duper Whack-A-Moji</a></li>
-        <li><a href="tap-blitz.html">Tap Blitz!</a></li>
-        <li><a href="tetris.html">Tetris</a></li>
-        <li><a href="fruit-fusion.html">Fruit Fusion</a></li>
-        <li><a href="memory-match.html">Memory Match</a></li>
-      </ul>
+      <div class="card-grid">
+        <a class="card" href="sudoku.html"><div class="icon">🧩</div><span>Sudoku</span></a>
+        <a class="card" href="whack-a-mole.html"><div class="icon">🔨</div><span>Super Duper Whack-A-Moji</span></a>
+        <a class="card" href="tap-blitz.html"><div class="icon">🎯</div><span>Tap Blitz!</span></a>
+        <a class="card" href="tetris.html"><div class="icon">🧱</div><span>Tetris</span></a>
+        <a class="card" href="fruit-fusion.html"><div class="icon">🍉</div><span>Fruit Fusion</span></a>
+        <a class="card" href="memory-match.html"><div class="icon">🃏</div><span>Memory Match</span></a>
+      </div>
     </div>
 
     <div class="category">
       <h2>Other Experiences</h2>
-      <ul>
-        <li><a href="doodle-dash.html">Doodle Dash</a></li>
-        <li><a href="duck-council.html">Duck Council</a></li>
-        <li><a href="global-leaderboard.html">Global Leaderboard</a></li>
-      </ul>
+      <div class="card-grid">
+        <a class="card" href="doodle-dash.html"><div class="icon">🖌️</div><span>Doodle Dash</span></a>
+        <a class="card" href="duck-council.html"><div class="icon">🦆</div><span>Duck Council</span></a>
+        <a class="card" href="global-leaderboard.html"><div class="icon">🏆</div><span>Global Leaderboard</span></a>
+      </div>
     </div>
   </div>
 
