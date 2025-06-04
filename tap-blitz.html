@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <script src="leaderboard.js"></script>
 
     <style>
         :root {
@@ -263,6 +264,45 @@
         }
         #pauseOverlay .menu-title { font-size: 2rem; margin-bottom: 20px; }
 
+        /* Leaderboard Styles */
+        #leaderboardList {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto 20px auto;
+            max-width: 300px;
+        }
+        #leaderboardList li {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        #leaderboardList li:last-child { border-bottom: none; }
+        #leaderboardList .rank { width: 2rem; }
+        #leaderboardList .initials { flex-grow: 1; text-align: left; }
+        #leaderboardList .score { font-weight: bold; }
+
+        .initials-prompt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0,0,0,0.85);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            z-index: 300;
+            display: none;
+        }
+        .initials-prompt input {
+            font-family: var(--font-family);
+            width: 80px;
+            text-align: center;
+            text-transform: uppercase;
+            padding: 8px;
+            margin: 10px 0;
+        }
+
     </style>
 </head>
 <body>
@@ -272,6 +312,13 @@
             <p class="high-score-display">High Score: <span id="homeHighScore">0</span></p>
             <button id="navigateToGameButton" class="menu-button">Play Game</button>
             <button id="navigateToThemesButton" class="menu-button">Themes</button>
+            <button id="showLeaderboardButton" class="menu-button">Leaderboard</button>
+        </div>
+
+        <div id="leaderboardScreen" class="screen">
+            <h1 class="menu-title">Leaderboard</h1>
+            <ol id="leaderboardList"></ol>
+            <button id="leaderboardBackButton" class="menu-button secondary-button">Back</button>
         </div>
 
         <div id="themesScreen" class="screen">
@@ -310,6 +357,13 @@
         <button id="quitToHomeButton" class="menu-button secondary-button">Quit to Home</button>
     </div>
 
+    <div id="initialsPrompt" class="initials-prompt">
+        <p>New High Score!</p>
+        <p>Enter your initials:</p>
+        <input type="text" id="initialsInput" maxlength="3">
+        <button id="submitInitialsButton" class="menu-button">Submit</button>
+    </div>
+
 
     <script>
         // --- DOM Elements ---
@@ -338,17 +392,27 @@
         const pauseOverlay = document.getElementById('pauseOverlay');
         const resumeGameButton = document.getElementById('resumeGameButton');
         const quitToHomeButton = document.getElementById('quitToHomeButton');
+        const showLeaderboardButton = document.getElementById('showLeaderboardButton');
+        const leaderboardScreen = document.getElementById('leaderboardScreen');
+        const leaderboardList = document.getElementById('leaderboardList');
+        const leaderboardBackButton = document.getElementById('leaderboardBackButton');
+        const initialsPrompt = document.getElementById('initialsPrompt');
+        const initialsInput = document.getElementById('initialsInput');
+        const submitInitialsButton = document.getElementById('submitInitialsButton');
 
 
         // --- Game State Variables ---
         let score = 0;
-        let timeLeft = 30; 
+        let timeLeft = 30;
         let gameTimerId;
         let gameStarted = false;
         let gamePaused = false;
         let currentCombo = 0;
         let highScore = 0;
         let missStreak = 0;
+        const MAX_LEADERBOARD_ENTRIES = 5;
+        const leaderboardManager = new Leaderboard('tapBlitz', MAX_LEADERBOARD_ENTRIES);
+        let leaderboard = leaderboardManager.load();
 
         const INITIAL_TIME = 30;
         const MISS_PENALTY_SECONDS = 1;
@@ -452,15 +516,13 @@
 
         // --- High Score ---
         function loadHighScore() {
-            highScore = parseInt(localStorage.getItem('tapBlitzHighScore')) || 0;
+            leaderboard = leaderboardManager.load();
+            highScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
             homeHighScoreDisplay.textContent = highScore;
         }
-        function saveHighScore() {
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('tapBlitzHighScore', highScore);
-                homeHighScoreDisplay.textContent = highScore;
-            }
+        function saveHighScore(initials) {
+            leaderboardManager.add(initials, score);
+            loadHighScore();
         }
 
         // --- Game Logic ---
@@ -484,8 +546,9 @@
             target.style.display = 'none';
             pauseButton.style.display = 'none';
             gamePaused = false; 
-            pauseOverlay.style.display = 'none'; 
-            if(gameTimerId) clearInterval(gameTimerId); 
+            pauseOverlay.style.display = 'none';
+            initialsPrompt.style.display = 'none';
+            if(gameTimerId) clearInterval(gameTimerId);
             console.log("New game prepared.");
         }
 
@@ -561,7 +624,12 @@
             pauseButton.style.display = 'none'; 
 
             if (!wasQuit) {
-                saveHighScore();
+                if (leaderboardManager.qualifies(score)) {
+                    initialsInput.value = '';
+                    initialsPrompt.style.display = 'block';
+                    initialsInput.focus();
+                    return;
+                }
                 gameMessage.textContent = `Game Over! Final Score: ${score}. High Score: ${highScore}`;
                 playSound('gameOver');
             } else {
@@ -607,8 +675,14 @@
 
         function updateScoreDisplay() { scoreDisplay.textContent = score; }
         function updateTimeDisplay() { timeLeftDisplay.textContent = Math.max(0, timeLeft); }
-        function updateComboDisplay() { 
+        function updateComboDisplay() {
             comboValueDisplay.textContent = currentCombo; // FIX: Only set the number
+        }
+
+        function displayLeaderboard() {
+            leaderboard = leaderboardManager.load();
+            leaderboardList.innerHTML = leaderboard.length === 0 ? '<li>No scores yet!</li>' :
+                leaderboard.map((entry, i) => `<li><span class="rank">${i + 1}.</span> <span class="initials">${entry.name}</span> <span class="score">${entry.score}</span></li>`).join('');
         }
 
         function handleTargetHit(event) { // Same as before, but calls corrected updateComboDisplay
@@ -679,7 +753,27 @@
 
         gameStartButton.addEventListener('click', () => { playSound('click'); startGame(); });
         playAgainButton.addEventListener('click', playAgain); 
-        pauseButton.addEventListener('click', togglePauseGame); 
+        pauseButton.addEventListener('click', togglePauseGame);
+        showLeaderboardButton.addEventListener('click', () => {
+            displayLeaderboard();
+            showScreen('leaderboardScreen');
+        });
+        leaderboardBackButton.addEventListener('click', () => showScreen('homeScreen'));
+        submitInitialsButton.addEventListener('click', () => {
+            const initials = initialsInput.value.trim().toUpperCase();
+            if (/^[A-Z]{1,3}$/.test(initials)) {
+                saveHighScore(initials);
+                initialsPrompt.style.display = 'none';
+                gameMessage.textContent = `Game Over! Final Score: ${score}. Saved!`;
+                gameMessage.style.display = 'block';
+                gameStartButton.style.display = 'none';
+                playAgainButton.style.display = 'block';
+                playSound('gameOver');
+            } else {
+                alert('Please enter 1-3 letters (A-Z).');
+                initialsInput.focus();
+            }
+        });
 
         // --- Initial Setup ---
         window.onload = () => {
