@@ -44,12 +44,15 @@
   <h1>Global Leaderboard</h1>
   <ol id="board"></ol>
   <a href="index.html" class="back">← Back to menu</a>
-  <script src="leaderboard.js"></script>
+  <script src="score-manager.js"></script>
   <script>
     window.addEventListener('DOMContentLoaded', async () => {
       const list = document.getElementById('board');
-      const entries = await GlobalLeaderboard.load();
-      renderLeaderboardList(list, entries, true);
+      const all = await ScoreManager.loadAll();
+      const entries = Object.entries(all).flatMap(([game, scores]) =>
+        scores.map(s => ({ game, name: s.name, score: s.score }))
+      ).sort((a, b) => b.score - a.score);
+      renderScoreList(list, entries, true);
     });
   </script>
 </body>

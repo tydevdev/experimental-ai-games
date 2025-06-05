@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <script src="leaderboard.js"></script>
+    <script src="score-manager.js"></script>
     <script src="player-progress.js"></script>
     <style>
         /* --- Base Styles --- */
@@ -1140,13 +1140,13 @@
         }
 
         async function addScoreToLeaderboard(name, scoreVal) {
-            await GlobalLeaderboard.add(GAME_KEY, name, scoreVal);
-            leaderboard = await GlobalLeaderboard.loadGame(GAME_KEY);
+            await ScoreManager.add(GAME_KEY, name, scoreVal);
+            leaderboard = await ScoreManager.load(GAME_KEY);
             saveData();
             displayLeaderboard();
         }
         async function displayLeaderboard() {
-            leaderboard = await GlobalLeaderboard.loadGame(GAME_KEY);
+            leaderboard = await ScoreManager.load(GAME_KEY);
             leaderboardList.innerHTML = leaderboard.length === 0 ? '<li>No scores yet!</li>' :
                 leaderboard.map((entry, index) => `<li><span>${index + 1}. ${entry.name}</span><span class="score">${entry.score}</span></li>`).join('');
         }
@@ -1319,7 +1319,7 @@
 
         function initializeGame() {
             loadData();
-            GlobalLeaderboard.loadGame(GAME_KEY).then(data => { leaderboard = data; displayLeaderboard(); });
+            ScoreManager.load(GAME_KEY).then(data => { leaderboard = data; displayLeaderboard(); });
             createGrid(); setupAnimatedTitle();
             if (themes[selectedTheme] && themes[selectedTheme].className) document.body.classList.add(themes[selectedTheme].className);
             updateMenuUI(); 

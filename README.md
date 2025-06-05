@@ -18,12 +18,12 @@ Match** was generated with Gemini and later polished using Codex for bug fixes.
 - **Sudoku** – A themed puzzle generator with candidate notes and multiple
   difficulty levels.
 - **Super Duper Whack‑A‑Moji** – Whack a flurry of emoji faces, earn XP and
-  chase a local leaderboard.
+  chase a local high score list.
 - **Tap Blitz!** – Rapid‑fire target popping where combos boost your score.
 - **Tetris** – Classic block stacking with touch controls, dynamic themes and
   high score tracking.
 - **Fruit Fusion** – Physics‑driven fruit merging puzzle inspired by the Suika
-  game. Includes multiple visual themes and a leaderboard.
+  game. Includes multiple visual themes and high scores.
 - **Memory Match** – Straightforward card matching made entirely with Codex as
   a reference point.
 
@@ -55,13 +55,7 @@ Open `index.html` in a browser to access the menu of all games and experiments.
 Some browsers restrict `localStorage` when opening files directly from disk, so
 launching a simple local web server (for example `python3 -m http.server`) is
 recommended.
-
-The leaderboard system stores entries in `localStorage` by default. You can run
-`node leaderboard-server.js` to start a small Express API that writes scores to
-`leaderboard.json`. When hosted, set `GlobalLeaderboard.serverUrl` in the
-browser console to the server URL so scores persist across devices. A global
-leaderboard page aggregates results from all games.
-
+High scores are now managed by `score-manager.js`, which keeps a simple per-game list in `localStorage`.
 ## AI Development Log
 
 This project tracks which language model produced each major piece of code. The log below summarizes notable updates.
@@ -84,5 +78,6 @@ This project tracks which language model produced each major piece of code. The 
 - **2025-06-07:** Introduced a global player progress system and reorganized the
   landing menu using **Codex**.
 
+- **2025-06-08:** Reworked the leaderboard system with a new `ScoreManager` using **Codex**.
 Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
 

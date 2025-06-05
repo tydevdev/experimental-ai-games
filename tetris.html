@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tetris Deluxe</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <script src="leaderboard.js"></script>
+    <script src="score-manager.js"></script>
     <style>
         :root {
             --body-bg: #1a1a2e;
@@ -635,12 +635,12 @@
         }
 
         async function loadHighScores() {
-            highScores = await GlobalLeaderboard.loadGame(GAME_KEY);
+            highScores = await ScoreManager.load(GAME_KEY);
             displayHighScores();
         }
         async function saveHighScore(initials, newScore) {
-            await GlobalLeaderboard.add(GAME_KEY, initials, newScore);
-            highScores = await GlobalLeaderboard.loadGame(GAME_KEY);
+            await ScoreManager.add(GAME_KEY, initials, newScore);
+            highScores = await ScoreManager.load(GAME_KEY);
             displayHighScores();
         }
         function displayHighScores() {
@@ -653,8 +653,8 @@
             });
         }
         async function checkHighScore() {
-            highScores = await GlobalLeaderboard.loadGame(GAME_KEY);
-            const isHighScore = highScores.length < GlobalLeaderboard.maxEntriesPerGame || score > highScores[highScores.length - 1].score;
+            highScores = await ScoreManager.load(GAME_KEY);
+            const isHighScore = highScores.length < ScoreManager.maxEntries || score > highScores[highScores.length - 1].score;
             if (isHighScore && score > 0) {
                 initialsInput.value = ''; initialsPrompt.style.display = 'block'; initialsInput.focus();
             } else { showMessage("Game Over! Score: " + score, "Play Again", resetGame); }
