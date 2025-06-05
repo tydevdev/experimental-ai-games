@@ -389,15 +389,14 @@
             'Z': { shape: [[1, 1, 0], [0, 1, 1]], color: '#f00000' }
         };
         const PIECE_KEYS = Object.keys(TETROMINOES);
-        const MAX_LEADERBOARD_ENTRIES = 5;
+        const GAME_KEY = 'tetris';
 
         // Game State
         let board, currentPiece, nextPiece, score, level, linesCleared, dropCounter, dropInterval, lastTime;
         let animationFrameId = null;
         let gamePaused = true;
         let gameOver = false;
-        const leaderboardManager = new Leaderboard('tetris', MAX_LEADERBOARD_ENTRIES);
-        let highScores = leaderboardManager.load();
+        let highScores = [];
 
         // Touch Controls Variables
         let touchstartX = 0, touchstartY = 0, touchendX = 0, touchendY = 0;
@@ -635,13 +634,13 @@
             animationFrameId = requestAnimationFrame(gameLoop);
         }
 
-        function loadHighScores() {
-            highScores = leaderboardManager.load();
+        async function loadHighScores() {
+            highScores = await GlobalLeaderboard.loadGame(GAME_KEY);
             displayHighScores();
         }
-        function saveHighScore(initials, newScore) {
-            leaderboardManager.add(initials, newScore);
-            highScores = leaderboardManager.load();
+        async function saveHighScore(initials, newScore) {
+            await GlobalLeaderboard.add(GAME_KEY, initials, newScore);
+            highScores = await GlobalLeaderboard.loadGame(GAME_KEY);
             displayHighScores();
         }
         function displayHighScores() {
@@ -653,17 +652,17 @@
                 highScoreListElement.appendChild(li);
             });
         }
-        function checkHighScore() {
-            highScores = leaderboardManager.load();
-            const isHighScore = highScores.length < MAX_LEADERBOARD_ENTRIES || score > highScores[highScores.length - 1].score;
+        async function checkHighScore() {
+            highScores = await GlobalLeaderboard.loadGame(GAME_KEY);
+            const isHighScore = highScores.length < GlobalLeaderboard.maxEntriesPerGame || score > highScores[highScores.length - 1].score;
             if (isHighScore && score > 0) {
                 initialsInput.value = ''; initialsPrompt.style.display = 'block'; initialsInput.focus();
             } else { showMessage("Game Over! Score: " + score, "Play Again", resetGame); }
         }
-        submitInitialsBtn.addEventListener('click', () => {
+        submitInitialsBtn.addEventListener('click', async () => {
             let initials = initialsInput.value.trim().toUpperCase();
             if (initials.length > 0 && initials.length <= 3 && /^[A-Z]+$/.test(initials)) {
-                saveHighScore(initials, score); initialsPrompt.style.display = 'none';
+                await saveHighScore(initials, score); initialsPrompt.style.display = 'none';
                 showMessage("Game Over! Score: " + score + ". Saved!", "Play Again", resetGame);
             } else {
                 showMessage("Please enter 1-3 uppercase letters for initials.", "OK", () => {

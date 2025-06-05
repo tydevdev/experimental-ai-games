@@ -51,8 +51,11 @@ Some browsers restrict `localStorage` when opening files directly from disk, so
 launching a simple local web server (for example `python3 -m http.server`) is
 recommended.
 
-The leaderboard system uses `localStorage` to persist scores locally and across
-games. A global leaderboard page aggregates results from individual games.
+The leaderboard system stores entries in `localStorage` by default. You can run
+`node leaderboard-server.js` to start a small Express API that writes scores to
+`leaderboard.json`. When hosted, set `GlobalLeaderboard.serverUrl` in the
+browser console to the server URL so scores persist across devices. A global
+leaderboard page aggregates results from all games.
 
 ## AI Development Log
 
@@ -71,6 +74,8 @@ This project tracks which language model produced each major piece of code. The 
 - **2025-06-05:** Added the "Whale Wonders" informational site and updated the
   main menu with a new Websites category using **Codex**.
 - **2025-06-06:** Major upgrade to Whale Wonders with an interactive carousel, additional pages and new UI elements using **Codex**.
+- **2025-06-07:** Unified leaderboards across all games and added a simple
+  Express server option using **Codex**.
 
 Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
 

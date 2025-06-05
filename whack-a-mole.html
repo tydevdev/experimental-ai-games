@@ -516,6 +516,7 @@
         const interactionOverlay = document.getElementById('interaction-overlay');
 
         // --- Game Constants & Config ---
+        const GAME_KEY = 'whackAMole';
         const MAX_LEADERBOARD_ENTRIES = 10;
         const FACE_TYPE = {
             NORMAL: 'normal', BONUS: 'bonus', PENALTY: 'penalty', FRENZY: 'frenzy',
@@ -556,8 +557,7 @@
         let currentDifficulty = difficulties.medium;
         let score = 0; let timeLeft = 0; let timerId = null; let faceTimerId = null;
         let gameActive = false; let currentScreen = 'menu'; let totalXP = 0;
-        const leaderboardManager = new Leaderboard('whackAMole', MAX_LEADERBOARD_ENTRIES);
-        let leaderboard = leaderboardManager.load();
+        let leaderboard = [];
         let unlockedThemes = ['default']; let selectedTheme = 'default';
         let unlockedRewards = []; let currentTitle = "";
         let audioInitialized = false; let soundEnabled = true;
@@ -1110,9 +1110,8 @@
             displayThemes();  
             saveData();
 
-            leaderboard = leaderboardManager.load();
-            const lowestLeaderboardScore = leaderboard.length < MAX_LEADERBOARD_ENTRIES ? 0 : leaderboard[leaderboard.length - 1].score;
-            if (score > 0 && score >= lowestLeaderboardScore) {
+            displayLeaderboard();
+            if (score > 0) {
                 gameOverInput.style.display = 'block'; nameInput.value = ''; nameInput.focus();
             } else {
                 gameOverInput.style.display = 'none';
@@ -1136,14 +1135,14 @@
              showScreen('menu');
         }
 
-        function addScoreToLeaderboard(name, scoreVal) {
-            leaderboardManager.add(name, scoreVal);
-            leaderboard = leaderboardManager.load();
+        async function addScoreToLeaderboard(name, scoreVal) {
+            await GlobalLeaderboard.add(GAME_KEY, name, scoreVal);
+            leaderboard = await GlobalLeaderboard.loadGame(GAME_KEY);
             saveData();
             displayLeaderboard();
         }
-        function displayLeaderboard() {
-            leaderboard = leaderboardManager.load();
+        async function displayLeaderboard() {
+            leaderboard = await GlobalLeaderboard.loadGame(GAME_KEY);
             leaderboardList.innerHTML = leaderboard.length === 0 ? '<li>No scores yet!</li>' :
                 leaderboard.map((entry, index) => `<li><span>${index + 1}. ${entry.name}</span><span class="score">${entry.score}</span></li>`).join('');
         }
@@ -1284,7 +1283,6 @@
                     soundEnabled = typeof data.soundEnabled === 'boolean' ? data.soundEnabled : true;
                     playerStats = data.playerStats || { totalGamesPlayed: 0, totalWhacks: 0, totalScore: 0, difficultyPlays: { easy: 0, medium: 0, hard: 0, marathon: 0 }};
                     selectedMusicTrackId = data.selectedMusicTrackId || 'chillGroove';
-                    if (data.leaderboard) leaderboardManager.save(data.leaderboard);
                 }
                  // TEMPORARY: Grant XP for testing
                  totalXP = 2500; 
@@ -1317,7 +1315,7 @@
 
         function initializeGame() {
             loadData();
-            leaderboard = leaderboardManager.load();
+            GlobalLeaderboard.loadGame(GAME_KEY).then(data => { leaderboard = data; displayLeaderboard(); });
             createGrid(); setupAnimatedTitle();
             if (themes[selectedTheme] && themes[selectedTheme].className) document.body.classList.add(themes[selectedTheme].className);
             updateMenuUI(); 
