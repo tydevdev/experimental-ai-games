@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
-    <script src="leaderboard.js"></script>
+    <script src="score-manager.js"></script>
 
     <style>
         :root {
@@ -515,12 +515,12 @@
 
         // --- High Score ---
         async function loadHighScore() {
-            leaderboard = await GlobalLeaderboard.loadGame(GAME_KEY);
+            leaderboard = await ScoreManager.load(GAME_KEY);
             highScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
             homeHighScoreDisplay.textContent = highScore;
         }
         async function saveHighScore(initials) {
-            await GlobalLeaderboard.add(GAME_KEY, initials, score);
+            await ScoreManager.add(GAME_KEY, initials, score);
             loadHighScore();
         }
 
@@ -676,7 +676,7 @@
         }
 
         async function displayLeaderboard() {
-            leaderboard = await GlobalLeaderboard.loadGame(GAME_KEY);
+            leaderboard = await ScoreManager.load(GAME_KEY);
             leaderboardList.innerHTML = leaderboard.length === 0 ? '<li>No scores yet!</li>' :
                 leaderboard.map((entry, i) => `<li><span class="rank">${i + 1}.</span> <span class="initials">${entry.name}</span> <span class="score">${entry.score}</span></li>`).join('');
         }

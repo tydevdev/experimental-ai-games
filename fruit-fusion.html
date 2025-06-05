@@ -6,7 +6,7 @@
     <title>Fruit Fusion Fun - Deluxe</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.min.js"></script>
-    <script src="leaderboard.js"></script>
+    <script src="score-manager.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -1193,10 +1193,10 @@
         }
 
         async function loadLeaderboard() {
-            leaderboard = await GlobalLeaderboard.loadGame(GAME_KEY);
+            leaderboard = await ScoreManager.load(GAME_KEY);
         }
         async function addScoreToLeaderboard(initials, newScore) {
-            await GlobalLeaderboard.add(GAME_KEY, initials, newScore);
+            await ScoreManager.add(GAME_KEY, initials, newScore);
         }
         async function displayLeaderboard() {
             await loadLeaderboard();
