@@ -27,6 +27,11 @@ Match** was generated with Gemini and later polished using Codex for bug fixes.
 - **Memory Match** – Straightforward card matching made entirely with Codex as
   a reference point.
 
+## Global Features
+
+- **Player Progress** – Persistent XP and leveling shared across all games with a framework for future battle pass rewards.
+- **Global Leaderboard** – Combined high scores from every game.
+
 ## Other Experiences
 
 Not everything here is a traditional game. The following pages are playful
@@ -76,6 +81,8 @@ This project tracks which language model produced each major piece of code. The 
 - **2025-06-06:** Major upgrade to Whale Wonders with an interactive carousel, additional pages and new UI elements using **Codex**.
 - **2025-06-07:** Unified leaderboards across all games and added a simple
   Express server option using **Codex**.
+- **2025-06-07:** Introduced a global player progress system and reorganized the
+  landing menu using **Codex**.
 
 Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
 
