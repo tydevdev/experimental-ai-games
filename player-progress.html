@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Progress</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #fafafa;
+      color: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    h1 { margin-bottom: 1rem; }
+    #stats { background:#fff; border:1px solid #ddd; padding:1rem 2rem; border-radius:4px; }
+    #stats p { margin:0.25rem 0; }
+    a.back { margin-top: 1.5rem; color: #0066cc; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h1>Player Progress</h1>
+  <div id="stats">
+    <p id="level">Level: 1</p>
+    <p id="xp">XP: 0</p>
+    <p id="next">Next level in 100 XP</p>
+  </div>
+  <h2 style="margin-top:2rem;">Battle Pass</h2>
+  <p>Coming soon...</p>
+  <a href="index.html" class="back">← Back to menu</a>
+  <script src="player-progress.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      const data = await PlayerProgress.load();
+      const info = PlayerProgress.calculateLevel(data.xp || 0);
+      document.getElementById('level').textContent = 'Level: ' + info.level;
+      document.getElementById('xp').textContent = 'XP: ' + (data.xp || 0);
+      document.getElementById('next').textContent = `Next level in ${info.nextLevelXP - info.currentXP} XP`;
+    });
+  </script>
+</body>
+</html>

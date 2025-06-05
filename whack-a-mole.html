@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="leaderboard.js"></script>
+    <script src="player-progress.js"></script>
     <style>
         /* --- Base Styles --- */
         :root {
@@ -1102,6 +1103,9 @@
             }
 
             totalXP += xpEarned;
+            if (window.PlayerProgress && typeof PlayerProgress.addXP === 'function') {
+                PlayerProgress.addXP(xpEarned);
+            }
             playerStats.totalScore += score;
 
             gameOverMessage.textContent = `Final Score: ${score} (+${xpEarned} XP)`;
