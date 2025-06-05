@@ -46,9 +46,9 @@
   <a href="index.html" class="back">← Back to menu</a>
   <script src="leaderboard.js"></script>
   <script>
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       const list = document.getElementById('board');
-      const entries = GlobalLeaderboard.load();
+      const entries = await GlobalLeaderboard.load();
       renderLeaderboardList(list, entries, true);
     });
   </script>

@@ -1,81 +1,57 @@
-class Leaderboard {
-  constructor(gameKey, maxEntries = 10) {
-    this.gameKey = gameKey;
-    this.storageKey = `leaderboard_${gameKey}`;
-    this.maxEntries = maxEntries;
-  }
-  load() {
+const GlobalLeaderboard = {
+  key: 'global_leaderboard_v2',
+  maxEntriesPerGame: 10,
+  serverUrl: null,
+  async load() {
+    if (this.serverUrl) {
+      try {
+        const res = await fetch(this.serverUrl + '/scores');
+        return await res.json();
+      } catch (e) {
+        console.error('Failed to load remote leaderboard', e);
+      }
+    }
     try {
-      const data = localStorage.getItem(this.storageKey);
+      const data = localStorage.getItem(this.key);
       return data ? JSON.parse(data) : [];
     } catch (e) {
       console.error('Failed to load leaderboard', e);
       return [];
     }
-  }
-  save(entries) {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(entries));
-    } catch (e) {
-      console.error('Failed to save leaderboard', e);
-    }
-  }
-  add(name, score) {
-    const board = this.load();
-    board.push({ name, score });
-    board.sort((a, b) => b.score - a.score);
-    const trimmed = board.slice(0, this.maxEntries);
-    this.save(trimmed);
-    // Only record in the global leaderboard if this score actually
-    // made it onto the local leaderboard after trimming
-    if (trimmed.some(e => e.name === name && e.score === score)) {
-      GlobalLeaderboard.add(this.gameKey, name, score);
-    }
-    return trimmed;
-  }
-  qualifies(score) {
-    const board = this.load();
-    if (score <= 0) return false;
-    if (board.length < this.maxEntries) return true;
-    return score > board[board.length - 1].score;
-  }
-}
-
-const GlobalLeaderboard = {
-  key: 'global_leaderboard_v1',
-  maxEntries: 50,
-  load() {
-    try {
-      const data = localStorage.getItem(this.key);
-      return data ? JSON.parse(data) : [];
-    } catch (e) {
-      console.error('Failed to load global leaderboard', e);
-      return [];
-    }
   },
-  qualifies(score) {
-    const board = this.load();
-    if (score <= 0) return false;
-    if (board.length < this.maxEntries) return true;
-    return score > board[board.length - 1].score;
+  async loadGame(game) {
+    const entries = await this.load();
+    return entries.filter(e => e.game === game).slice(0, this.maxEntriesPerGame);
   },
-  save(entries) {
+  async save(entries) {
+    if (this.serverUrl) {
+      console.warn('save() should not be called when using server mode');
+      return;
+    }
     try {
       localStorage.setItem(this.key, JSON.stringify(entries));
     } catch (e) {
-      console.error('Failed to save global leaderboard', e);
+      console.error('Failed to save leaderboard', e);
     }
   },
-  add(game, name, score) {
-    if (!this.qualifies(score)) {
-      return this.load();
+  async add(game, name, score) {
+    if (this.serverUrl) {
+      try {
+        await fetch(this.serverUrl + '/scores', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ game, name, score })
+        });
+      } catch (e) {
+        console.error('Failed to submit score', e);
+      }
+      return this.loadGame(game);
     }
-    const board = this.load();
+    const board = await this.load();
     board.push({ game, name, score });
     board.sort((a, b) => b.score - a.score);
-    const trimmed = board.slice(0, this.maxEntries);
-    this.save(trimmed);
-    return trimmed;
+    await this.save(board);
+    return this.loadGame(game);
   }
 };
 
