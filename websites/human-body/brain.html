@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Brain</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>Discover the Human Body</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="heart.html">Heart</a></li>
+                <li><a href="brain.html" class="active">Brain</a></li>
+                <li><a href="lungs.html">Lungs</a></li>
+                <li><a href="digestive.html">Digestive System</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>The Brain</h2>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Brain_%28mid-sagittal%29.png" alt="Brain" class="feature-image">
+        <p>The brain controls everything from breathing and heartbeat to thoughts and emotions. It contains billions of neurons that communicate via electrical signals.</p>
+        <div class="accordion">
+            <button onclick="toggleSection(this)">How it works</button>
+            <div class="panel">
+                <p>Different regions of the brain specialize in tasks such as processing sensory input, coordinating movement, and managing memories. The brain communicates with the rest of the body through the spinal cord and nerves.</p>
+            </div>
+            <button onclick="toggleSection(this)">Keeping it healthy</button>
+            <div class="panel">
+                <p>A varied diet, mental stimulation, physical exercise, and quality sleep help keep your brain sharp. Avoiding excessive alcohol or drugs is also crucial.</p>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2024 Explore Anatomy</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

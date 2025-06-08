@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Heart</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>Discover the Human Body</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="heart.html" class="active">Heart</a></li>
+                <li><a href="brain.html">Brain</a></li>
+                <li><a href="lungs.html">Lungs</a></li>
+                <li><a href="digestive.html">Digestive System</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>The Heart</h2>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/8/80/Human_heart_%28cutout%29.png" alt="Heart diagram" class="feature-image">
+        <p>The heart is a muscular organ that pumps blood throughout the body, supplying oxygen and nutrients while removing carbon dioxide and wastes. It beats about 100,000 times every day.</p>
+        <div class="accordion">
+            <button onclick="toggleSection(this)">How it works</button>
+            <div class="panel">
+                <p>The heart has four chambers: two atria and two ventricles. Blood flows through a precise sequence of contractions, controlled by electrical impulses, which keeps circulation going.</p>
+            </div>
+            <button onclick="toggleSection(this)">Keeping it healthy</button>
+            <div class="panel">
+                <p>Regular exercise, a balanced diet, and not smoking are key to maintaining a strong heart. Managing stress and getting enough sleep also contribute to cardiovascular health.</p>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2024 Explore Anatomy</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>
