@@ -1,34 +1,46 @@
 const ScoreManager = {
-  key: 'ai_games_scores_v1',
+  prefix: 'ai_games_',
+  suffix: '_scores_v1',
   maxEntries: 10,
+  getKey(game) {
+    return `${this.prefix}${game}${this.suffix}`;
+  },
   async loadAll() {
-    try {
-      const data = localStorage.getItem(this.key);
-      return data ? JSON.parse(data) : {};
-    } catch (e) {
-      console.error('Failed to load scores', e);
-      return {};
+    const result = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(this.prefix) && key.endsWith(this.suffix)) {
+        const game = key.slice(this.prefix.length, key.length - this.suffix.length);
+        try {
+          result[game] = JSON.parse(localStorage.getItem(key)) || [];
+        } catch (e) {
+          console.error('Failed to parse scores for', game, e);
+          result[game] = [];
+        }
+      }
     }
+    return result;
   },
   async load(game) {
-    const all = await this.loadAll();
-    return all[game] || [];
-  },
-  async saveAll(all) {
     try {
-      localStorage.setItem(this.key, JSON.stringify(all));
+      const data = localStorage.getItem(this.getKey(game));
+      return data ? JSON.parse(data) : [];
     } catch (e) {
-      console.error('Failed to save scores', e);
+      console.error('Failed to load scores for', game, e);
+      return [];
     }
   },
   async add(game, name, score) {
-    const all = await this.loadAll();
-    if (!all[game]) all[game] = [];
-    all[game].push({ name, score });
-    all[game].sort((a, b) => b.score - a.score);
-    all[game] = all[game].slice(0, this.maxEntries);
-    await this.saveAll(all);
-    return all[game];
+    const list = await this.load(game);
+    list.push({ name, score });
+    list.sort((a, b) => b.score - a.score);
+    const trimmed = list.slice(0, this.maxEntries);
+    try {
+      localStorage.setItem(this.getKey(game), JSON.stringify(trimmed));
+    } catch (e) {
+      console.error('Failed to save scores for', game, e);
+    }
+    return trimmed;
   }
 };
 

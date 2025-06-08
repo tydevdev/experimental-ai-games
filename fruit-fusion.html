@@ -1196,7 +1196,7 @@
             leaderboard = await ScoreManager.load(GAME_KEY);
         }
         async function addScoreToLeaderboard(initials, newScore) {
-            await ScoreManager.add(GAME_KEY, initials, newScore);
+            leaderboard = await ScoreManager.add(GAME_KEY, initials, newScore);
         }
         async function displayLeaderboard() {
             await loadLeaderboard();
