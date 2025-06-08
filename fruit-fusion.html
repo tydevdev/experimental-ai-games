@@ -983,6 +983,16 @@
                 dropFruit();
             }
         }
+
+        function calculateMergeScore(baseFruit, resultingFruit) {
+            const sizeFactor = (baseFruit.radius + resultingFruit.radius) / BASE_FRUITS_DATA_STRUCTURE[0].radius;
+            return Math.round(sizeFactor + (resultingFruit.points || 0));
+        }
+
+        function calculatePopScore(fruit) {
+            const sizeFactor = fruit.radius / BASE_FRUITS_DATA_STRUCTURE[0].radius;
+            return Math.round(sizeFactor * (fruit.points || 0));
+        }
         
         function handleCollision(event) {
             if (isGameOver || isGamePaused) return;
@@ -1028,7 +1038,7 @@
                         mergeEffectQueue.push({ x: newFruit.position.x, y: newFruit.position.y, radius: newFruit.radius, life: 20 }); 
                         playSound('merge', Tone.Frequency(nextFruit.id + 60, "midi").toNote()); 
                         
-                        let mergeScore = currentFruit.points * 2 + (nextFruit.points || 0); 
+                        let mergeScore = calculateMergeScore(currentFruit, nextFruit);
                         
                         const currentTime = Date.now();
                         if (currentTime - lastMergeTime < COMBO_WINDOW_MS) {
@@ -1056,7 +1066,7 @@
                         mergeEffectQueue.push({ x: popX, y: popY, radius: currentFruit.radius, life: 20 });
                         playSound('merge', Tone.Frequency(currentFruit.id + 60, "midi").toNote());
 
-                        let popScore = currentFruit.points * 3;
+                        let popScore = calculatePopScore(currentFruit);
                         const currentTime = Date.now();
                         if (currentTime - lastMergeTime < COMBO_WINDOW_MS) {
                             comboCounter++;
