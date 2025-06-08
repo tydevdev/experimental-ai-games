@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discover the Human Body</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>Discover the Human Body</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="heart.html">Heart</a></li>
+                <li><a href="brain.html">Brain</a></li>
+                <li><a href="lungs.html">Lungs</a></li>
+                <li><a href="digestive.html">Digestive System</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section class="hero">
+            <h2>Welcome!</h2>
+            <p>Click on any of the organs below to learn how they keep you alive and well.</p>
+        </section>
+        <section class="carousel" id="carousel">
+            <button class="carousel-control prev" onclick="prevSlide()">&#10094;</button>
+            <div class="carousel-slides">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/80/Human_heart_%28cutout%29.png" alt="Heart">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Brain_%28mid-sagittal%29.png" alt="Brain">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e6/Respiratory_system_complete_en.svg" alt="Lungs">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/Digestive_system_diagram_en.svg" alt="Digestive System">
+            </div>
+            <button class="carousel-control next" onclick="nextSlide()">&#10095;</button>
+        </section>
+        <section class="links">
+            <div class="card"><a href="heart.html">Learn about the Heart</a></div>
+            <div class="card"><a href="brain.html">Learn about the Brain</a></div>
+            <div class="card"><a href="lungs.html">Learn about the Lungs</a></div>
+            <div class="card"><a href="digestive.html">Learn about Digestion</a></div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 Explore Anatomy</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>
