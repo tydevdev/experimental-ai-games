@@ -384,7 +384,7 @@
             <div id="initials-prompt-screen">
                 <h2>New High Score!</h2>
                 <p>Enter your initials (3 letters):</p>
-                <input type="text" id="initials-input" maxlength="3">
+                <input type="text" id="initials-input" maxlength="3" pattern="[A-Za-z]{3}" placeholder="ABC">
                 <button id="submit-initials-button" class="button">Submit</button>
             </div>
             <div id="pause-screen">
@@ -517,7 +517,8 @@
         const leaderboardList = document.getElementById('leaderboard-list');
         const themeOptionsContainer = document.querySelector('.theme-options');
         
-        let aimingFruitPreviewHTML, comboTextDisplay, gameOverScreenDiv, initialsPromptScreen, pauseScreen;
+        let aimingFruitPreviewHTML, comboTextDisplay, gameOverScreenDiv, initialsPromptScreen, pauseScreen, initialsInput;
+        initialsInput = document.getElementById('initials-input');
 
         const startGameButton = document.getElementById('start-game-button');
         const leaderboardButton = document.getElementById('leaderboard-button');
@@ -681,7 +682,7 @@
                 <div id="initials-prompt-screen">
                     <h2>New High Score!</h2>
                     <p>Enter your initials (3 letters):</p>
-                    <input type="text" id="initials-input" maxlength="3">
+                    <input type="text" id="initials-input" maxlength="3" pattern="[A-Za-z]{3}" placeholder="ABC">
                     <button id="submit-initials-button" class="button">Submit</button>
                 </div>
                 <div id="pause-screen">
@@ -709,18 +710,19 @@
             const newSubmitInitialsButton = initialsPromptScreen.querySelector('#submit-initials-button');
             const newResumeGameButton = pauseScreen.querySelector('#resume-game-button');
             const newMainMenuButtonPause = pauseScreen.querySelector('#main-menu-button-pause');
-            const newInitialsInput = initialsPromptScreen.querySelector('#initials-input'); 
+            const newInitialsInput = initialsPromptScreen.querySelector('#initials-input');
+            initialsInput = newInitialsInput;
 
             if(newRestartGameButtonGameOver) newRestartGameButtonGameOver.onclick = () => { showScreen('game-screen'); initializeGame(); };
             if(newMainMenuButtonGameOver) newMainMenuButtonGameOver.onclick = () => showScreen('main-menu-screen');
             if(newSubmitInitialsButton) newSubmitInitialsButton.onclick = async () => {
-                const initialsVal = newInitialsInput.value.trim().toUpperCase().substring(0, 3);
+                const initialsVal = initialsInput.value.trim().toUpperCase().substring(0, 3);
                 if (initialsVal.length === 3) {
                     await addScoreToLeaderboard(initialsVal, score);
                     initialsPromptScreen.style.display = 'none';
                     gameOverScreenDiv.style.display = 'flex';
                     finalScoreDisplay.textContent = score;
-                    newInitialsInput.value = '';
+                    initialsInput.value = '';
                 } else {
                     showCustomAlert("Please enter 3 initials.");
                 }
@@ -781,9 +783,11 @@
                 if (isGameOver || isGamePaused) return;
                 switch (e.key) {
                     case 'ArrowLeft':
+                        e.preventDefault();
                         moveAimingFruitBy(-20);
                         break;
                     case 'ArrowRight':
+                        e.preventDefault();
                         moveAimingFruitBy(20);
                         break;
                     case 'ArrowDown':
@@ -1123,21 +1127,28 @@
             }
         }
 
-        function triggerGameOver() {
-            if (isGameOver) return; 
+       function triggerGameOver() {
+            if (isGameOver) return;
             isGameOver = true;
-            canDrop = false; 
-            if (runner) Runner.stop(runner); 
+            canDrop = false;
+            if (runner) Runner.stop(runner);
             playSound('gameOver');
-            
-            saveOverallHighScore(); 
-            if (finalScoreDisplay) finalScoreDisplay.textContent = score; 
+
+            const isNewHigh = score > overallHighScore;
+            saveOverallHighScore();
+            if (finalScoreDisplay) finalScoreDisplay.textContent = score;
 
             if (initialsPromptScreen && gameOverScreenDiv) {
-                initialsPromptScreen.style.display = 'flex';
-                gameOverScreenDiv.style.display = 'none';
+                if (isNewHigh) {
+                    initialsPromptScreen.style.display = 'flex';
+                    gameOverScreenDiv.style.display = 'none';
+                    if (initialsInput) initialsInput.focus();
+                } else {
+                    initialsPromptScreen.style.display = 'none';
+                    gameOverScreenDiv.style.display = 'flex';
+                }
             }
-            if (aimingFruitPreviewHTML) aimingFruitPreviewHTML.style.display = 'none'; 
+            if (aimingFruitPreviewHTML) aimingFruitPreviewHTML.style.display = 'none';
         }
 
         function renderGameElements() {
