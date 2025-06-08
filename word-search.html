@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="score-manager.js"></script>
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background:#222;
+            color:#eee;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            padding-top:20px;
+        }
+        table {
+            border-collapse: collapse;
+            user-select:none;
+        }
+        td {
+            width:32px;
+            height:32px;
+            border:1px solid #555;
+            text-align:center;
+            font-size:20px;
+            cursor:pointer;
+        }
+        td.selected { background:#f7d060; color:#000; }
+        td.found { background:#6bf178; color:#000; }
+        #wordList li.found { text-decoration: line-through; color:#6bf178; }
+        button { margin-top:10px; }
+    </style>
+</head>
+<body>
+    <h1>Word Search</h1>
+    <ul id="wordList"></ul>
+    <table id="grid"></table>
+    <button id="showScores">Show Leaderboard</button>
+    <ol id="leaderboard"></ol>
+
+<script>
+const WORDS = ['CODE','NODE','JAVA','RUST','HTML','CSS'];
+const SIZE = 10;
+const GAME_KEY = 'word_search';
+let board = Array.from({length:SIZE}, () => Array(SIZE).fill(''));
+
+function placeWord(word) {
+    const dirs = [
+        {x:1, y:0}, {x:0, y:1}, {x:1, y:1}, {x:-1, y:1}
+    ];
+    for(let attempt=0; attempt<100; attempt++) {
+        const dir = dirs[Math.floor(Math.random()*dirs.length)];
+        const maxX = dir.x === 1 ? SIZE - word.length : dir.x === -1 ? word.length-1 : SIZE-1;
+        const maxY = dir.y === 1 ? SIZE - word.length : SIZE-1;
+        const x = dir.x === -1 ? Math.floor(Math.random()*(SIZE-word.length))+word.length-1 : Math.floor(Math.random()*(maxX+1));
+        const y = Math.floor(Math.random()*(maxY+1));
+        let fits = true;
+        for(let i=0;i<word.length;i++) {
+            const cx = x + dir.x*i;
+            const cy = y + dir.y*i;
+            const cell = board[cy][cx];
+            if(cell && cell !== word[i]) { fits=false; break; }
+        }
+        if(!fits) continue;
+        for(let i=0;i<word.length;i++) {
+            const cx = x + dir.x*i;
+            const cy = y + dir.y*i;
+            board[cy][cx] = word[i];
+        }
+        return true;
+    }
+    return false;
+}
+
+WORDS.forEach(w => placeWord(w));
+for(let y=0;y<SIZE;y++) {
+    for(let x=0;x<SIZE;x++) {
+        if(!board[y][x]) board[y][x] = String.fromCharCode(65+Math.floor(Math.random()*26));
+    }
+}
+
+const grid = document.getElementById('grid');
+const wordList = document.getElementById('wordList');
+WORDS.forEach(w => {
+    const li=document.createElement('li');
+    li.textContent=w;
+    wordList.appendChild(li);
+});
+
+for(let y=0;y<SIZE;y++){
+    const row=document.createElement('tr');
+    for(let x=0;x<SIZE;x++){
+        const td=document.createElement('td');
+        td.textContent=board[y][x];
+        td.dataset.x=x;
+        td.dataset.y=y;
+        row.appendChild(td);
+    }
+    grid.appendChild(row);
+}
+
+let selecting=false; let selected=[];
+function addCell(td){
+    if(!selected.includes(td)){
+        td.classList.add('selected');
+        selected.push(td);
+    }
+}
+
+grid.addEventListener('mousedown',e=>{
+    if(e.target.tagName==='TD'){
+        selecting=true;
+        clearSelection();
+        addCell(e.target);
+    }
+});
+
+grid.addEventListener('mouseover',e=>{
+    if(selecting && e.target.tagName==='TD') addCell(e.target);
+});
+
+document.addEventListener('mouseup',()=>{
+    if(selecting){
+        selecting=false;
+        checkSelection();
+        clearSelection();
+    }
+});
+
+function clearSelection(){
+    selected.forEach(td=>td.classList.remove('selected'));
+    selected=[];
+}
+
+let foundCount=0;
+function checkSelection(){
+    if(selected.length===0) return;
+    const word=selected.map(td=>td.textContent).join('');
+    const rev=[...word].reverse().join('');
+    let target=WORDS.find(w=>w===word||w===rev);
+    if(target){
+        selected.forEach(td=>td.classList.add('found'));
+        Array.from(wordList.children).forEach(li=>{ if(li.textContent===target) li.classList.add('found'); });
+        WORDS.splice(WORDS.indexOf(target),1);
+        foundCount++;
+        if(foundCount===6) finish();
+    }
+}
+
+const startTime=performance.now();
+function finish(){
+    const time=(performance.now()-startTime)/1000;
+    const initials=prompt(`All words found in ${time.toFixed(1)}s! Enter initials (3 letters):`);
+    if(initials && /^[A-Za-z]{3}$/.test(initials)){
+        ScoreManager.add(GAME_KEY, initials.toUpperCase(), -time).then(displayLeaderboard);
+    }
+}
+
+const leaderList=document.getElementById('leaderboard');
+function displayLeaderboard(){
+    ScoreManager.load(GAME_KEY).then(entries=>{
+        leaderList.innerHTML=entries.length===0?'<li>No scores yet!</li>':
+            entries.map((e,i)=>`<li>${i+1}. ${e.name} - ${(-e.score).toFixed(1)}s</li>`).join('');
+    });
+}
+
+document.getElementById('showScores').addEventListener('click',displayLeaderboard);
+</script>
+</body>
+</html>
