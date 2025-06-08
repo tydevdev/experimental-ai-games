@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mini Racer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="score-manager.js"></script>
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background: #222;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            background: #444;
+            border: 3px solid #fff;
+        }
+        #controls button {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            margin-top: 10px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+        }
+        #leaderboard {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #leaderboard ol {
+            padding: 0;
+            list-style: none;
+        }
+        #leaderboard li {
+            margin: 2px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="game" width="300" height="500"></canvas>
+        <div id="controls">
+            <button id="startBtn">Start</button>
+        </div>
+        <div id="leaderboard">
+            <h3>High Scores</h3>
+            <ol id="leaderboardList"></ol>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const startBtn = document.getElementById('startBtn');
+const leaderList = document.getElementById('leaderboardList');
+
+const GAME_KEY = 'mini_racer';
+const laneCount = 3;
+const laneWidth = canvas.width / laneCount;
+const carWidth = 30;
+const carHeight = 50;
+const carY = canvas.height - carHeight - 10;
+const maxSpeed = 10;
+const minSpeed = 2;
+
+let lane, speed, score, obstacles, frameId, gameOver;
+
+function resetGame() {
+    lane = 1;
+    speed = 4;
+    score = 0;
+    obstacles = [];
+    gameOver = false;
+    startLoop();
+}
+
+function startLoop() {
+    cancelAnimationFrame(frameId);
+    frameId = requestAnimationFrame(loop);
+}
+
+function loop() {
+    update();
+    draw();
+    if (!gameOver) frameId = requestAnimationFrame(loop);
+}
+
+function update() {
+    score += speed;
+
+    // spawn obstacle
+    if (Math.random() < 0.03 + speed/100) {
+        const laneIdx = Math.floor(Math.random() * laneCount);
+        obstacles.push({ lane: laneIdx, y: -carHeight });
+    }
+
+    obstacles.forEach(o => o.y += speed);
+    obstacles = obstacles.filter(o => o.y < canvas.height + carHeight);
+
+    // collision check
+    const px = lane * laneWidth + laneWidth/2 - carWidth/2;
+    obstacles.forEach(o => {
+        const ox = o.lane * laneWidth + laneWidth/2 - carWidth/2;
+        if (ox < px + carWidth && ox + carWidth > px &&
+            o.y < carY + carHeight && o.y + carHeight > carY) {
+            endGame();
+        }
+    });
+}
+
+function draw() {
+    ctx.fillStyle = '#444';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // lane markings
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([15,15]);
+    for (let i = 1; i < laneCount; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * laneWidth, 0);
+        ctx.lineTo(i * laneWidth, canvas.height);
+        ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // draw obstacles
+    ctx.fillStyle = '#f00';
+    obstacles.forEach(o => {
+        const x = o.lane * laneWidth + laneWidth/2 - carWidth/2;
+        ctx.fillRect(x, o.y, carWidth, carHeight);
+    });
+
+    // draw player car
+    const x = lane * laneWidth + laneWidth/2 - carWidth/2;
+    ctx.fillStyle = '#0f0';
+    ctx.fillRect(x, carY, carWidth, carHeight);
+
+    // score
+    ctx.fillStyle = '#fff';
+    ctx.font = '16px "Press Start 2P"';
+    ctx.fillText(`Score: ${Math.floor(score)}`, 10, 20);
+}
+
+function endGame() {
+    gameOver = true;
+    cancelAnimationFrame(frameId);
+    const initials = prompt('Game over! Enter your initials (3 letters):');
+    if(initials && /^[A-Za-z]{3}$/.test(initials)) {
+        ScoreManager.add(GAME_KEY, initials.toUpperCase(), Math.floor(score)).then(displayLeaderboard);
+    }
+}
+
+function displayLeaderboard() {
+    ScoreManager.load(GAME_KEY).then(entries => {
+        leaderList.innerHTML = entries.length === 0 ? '<li>No scores yet!</li>' :
+            entries.map((e, i) => `<li>${i+1}. ${e.name} - ${e.score}</li>`).join('');
+    });
+}
+
+document.addEventListener('keydown', e => {
+    if (gameOver) return;
+    switch (e.key) {
+        case 'ArrowLeft':
+            if (lane > 0) lane--;
+            break;
+        case 'ArrowRight':
+            if (lane < laneCount - 1) lane++;
+            break;
+        case 'ArrowUp':
+            speed = Math.min(maxSpeed, speed + 1);
+            break;
+        case 'ArrowDown':
+            speed = Math.max(minSpeed, speed - 1);
+            break;
+    }
+});
+
+startBtn.addEventListener('click', () => {
+    resetGame();
+});
+
+displayLeaderboard();
+</script>
+</body>
+</html>
