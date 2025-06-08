@@ -27,7 +27,7 @@ Match** was generated with Gemini and later polished using Codex for bug fixes.
 - **Memory Match** – Straightforward card matching made entirely with Codex as
   a reference point.
 
-- **Mini Racer** – Simple top-down racing game controlled with arrow keys.
+- **Mini Racer** – A simple time‑trial kart race on a randomly winding track. Stray onto the grass and a three‑second timer forces you back on course.
 ## Other Experiences
 
 Not everything here is a traditional game. The following pages are playful
@@ -76,5 +76,7 @@ This project tracks which language model produced each major piece of code. The 
 
 - **2025-06-08:** Reworked the leaderboard system with a new `ScoreManager` using **Codex**.
 - **2025-06-08:** Removed the global player progress and leaderboard pages using **Codex**.
+- **2025-06-09:** Overhauled Mini Racer with a dynamic track and off-road timer using **Codex**.
+- **2025-06-10:** Expanded Mini Racer with sharper curves, visual road markings and a free-roam driving feel using **Codex**.
 Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
 

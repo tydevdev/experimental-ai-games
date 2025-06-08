@@ -25,7 +25,7 @@
             align-items: center;
         }
         canvas {
-            background: #444;
+            background: #060; /* grass */
             border: 3px solid #fff;
         }
         #controls button {
@@ -57,7 +57,7 @@
             <button id="startBtn">Start</button>
         </div>
         <div id="leaderboard">
-            <h3>High Scores</h3>
+            <h3>Best Times</h3>
             <ol id="leaderboardList"></ol>
         </div>
     </div>
@@ -68,23 +68,55 @@ const ctx = canvas.getContext('2d');
 const startBtn = document.getElementById('startBtn');
 const leaderList = document.getElementById('leaderboardList');
 
-const GAME_KEY = 'mini_racer';
-const laneCount = 3;
-const laneWidth = canvas.width / laneCount;
-const carWidth = 30;
-const carHeight = 50;
-const carY = canvas.height - carHeight - 10;
-const maxSpeed = 10;
-const minSpeed = 2;
+const GAME_KEY = 'mini_racer_v2';
+const roadWidth = canvas.width * 0.6;
+const carWidth = 20;
+const carHeight = 40;
+const carY = canvas.height - carHeight - 20;
+const maxSpeed = 8;
+const accel = 0.2;
+const friction = 0.05;
+const trackLength = 5000;
 
-let lane, speed, score, obstacles, frameId, gameOver;
+let track = [];
+let carX, speed, progress, frameId;
+let gameOver = true;
+let startTime = 0;
+let keys = {};
+let offTrackStart = null;
+
+function generateTrack() {
+    track = [];
+    let center = canvas.width / 2;
+    let direction = 0;
+    let targetCurve = 0;
+    for (let i = 0; i < trackLength; i++) {
+        if (i % 120 === 0) {
+            targetCurve = (Math.random() - 0.5) * 0.05;
+        }
+        direction += (targetCurve - direction) * 0.02;
+        center += direction * 5;
+        const half = roadWidth / 2;
+        if (center < half) {
+            center = half;
+            direction = Math.abs(direction) * 0.5;
+        }
+        if (center > canvas.width - half) {
+            center = canvas.width - half;
+            direction = -Math.abs(direction) * 0.5;
+        }
+        track.push(center);
+    }
+}
 
 function resetGame() {
-    lane = 1;
-    speed = 4;
-    score = 0;
-    obstacles = [];
+    generateTrack();
+    carX = canvas.width / 2 - carWidth / 2;
+    speed = 0;
+    progress = 0;
+    offTrackStart = null;
     gameOver = false;
+    startTime = performance.now();
     startLoop();
 }
 
@@ -100,94 +132,89 @@ function loop() {
 }
 
 function update() {
-    score += speed;
-
-    // spawn obstacle
-    if (Math.random() < 0.03 + speed/100) {
-        const laneIdx = Math.floor(Math.random() * laneCount);
-        obstacles.push({ lane: laneIdx, y: -carHeight });
+    if (keys['ArrowLeft']) carX -= 3;
+    if (keys['ArrowRight']) carX += 3;
+    if (keys['ArrowUp']) {
+        speed = Math.min(maxSpeed, speed + accel);
+    } else {
+        speed = Math.max(0, speed - friction);
     }
+    carX = Math.max(0, Math.min(canvas.width - carWidth, carX));
+    progress += speed;
 
-    obstacles.forEach(o => o.y += speed);
-    obstacles = obstacles.filter(o => o.y < canvas.height + carHeight);
+    const trackIndex = Math.floor(progress + (canvas.height - carY));
+    if (trackIndex >= trackLength) {
+        finishRace();
+        return;
+    }
+    const center = track[trackIndex];
+    const half = roadWidth / 2;
+    const onRoad = carX + carWidth / 2 >= center - half && carX + carWidth / 2 <= center + half;
 
-    // collision check
-    const px = lane * laneWidth + laneWidth/2 - carWidth/2;
-    obstacles.forEach(o => {
-        const ox = o.lane * laneWidth + laneWidth/2 - carWidth/2;
-        if (ox < px + carWidth && ox + carWidth > px &&
-            o.y < carY + carHeight && o.y + carHeight > carY) {
-            endGame();
+    if (!onRoad) {
+        if (offTrackStart === null) offTrackStart = performance.now();
+        if ((performance.now() - offTrackStart) / 1000 >= 3) {
+            resetGame();
+            return;
         }
-    });
+    } else {
+        offTrackStart = null;
+    }
 }
 
 function draw() {
-    ctx.fillStyle = '#444';
+    ctx.fillStyle = '#060';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // lane markings
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([15,15]);
-    for (let i = 1; i < laneCount; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * laneWidth, 0);
-        ctx.lineTo(i * laneWidth, canvas.height);
-        ctx.stroke();
+    for (let y = 0; y < canvas.height; y++) {
+        const idx = Math.floor(progress + y);
+        if (idx >= trackLength) break;
+        const center = track[idx];
+        const half = roadWidth / 2;
+        const screenY = canvas.height - y - 1;
+        ctx.fillStyle = '#555';
+        ctx.fillRect(center - half, screenY, roadWidth, 1);
+        if (Math.floor(idx / 15) % 2 === 0) {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(center - 1, screenY, 2, 1);
+        }
     }
-    ctx.setLineDash([]);
 
-    // draw obstacles
-    ctx.fillStyle = '#f00';
-    obstacles.forEach(o => {
-        const x = o.lane * laneWidth + laneWidth/2 - carWidth/2;
-        ctx.fillRect(x, o.y, carWidth, carHeight);
-    });
-
-    // draw player car
-    const x = lane * laneWidth + laneWidth/2 - carWidth/2;
     ctx.fillStyle = '#0f0';
-    ctx.fillRect(x, carY, carWidth, carHeight);
+    ctx.fillRect(carX, carY, carWidth, carHeight);
 
-    // score
-    ctx.fillStyle = '#fff';
-    ctx.font = '16px "Press Start 2P"';
-    ctx.fillText(`Score: ${Math.floor(score)}`, 10, 20);
+    if (offTrackStart !== null) {
+        const remaining = 3 - (performance.now() - offTrackStart) / 1000;
+        ctx.fillStyle = '#fff';
+        ctx.font = '24px "Press Start 2P"';
+        ctx.textAlign = 'center';
+        ctx.fillText(Math.ceil(remaining), canvas.width / 2, canvas.height / 2);
+    }
 }
 
-function endGame() {
+function finishRace() {
     gameOver = true;
     cancelAnimationFrame(frameId);
-    const initials = prompt('Game over! Enter your initials (3 letters):');
-    if(initials && /^[A-Za-z]{3}$/.test(initials)) {
-        ScoreManager.add(GAME_KEY, initials.toUpperCase(), Math.floor(score)).then(displayLeaderboard);
+    const time = (performance.now() - startTime) / 1000;
+    const initials = prompt(`Finished in ${time.toFixed(2)}s! Enter your initials (3 letters):`);
+    if (initials && /^[A-Za-z]{3}$/.test(initials)) {
+        ScoreManager.add(GAME_KEY, initials.toUpperCase(), -time).then(displayLeaderboard);
     }
 }
 
 function displayLeaderboard() {
     ScoreManager.load(GAME_KEY).then(entries => {
         leaderList.innerHTML = entries.length === 0 ? '<li>No scores yet!</li>' :
-            entries.map((e, i) => `<li>${i+1}. ${e.name} - ${e.score}</li>`).join('');
+            entries.map((e, i) => `<li>${i+1}. ${e.name} - ${(-e.score).toFixed(2)}s</li>`).join('');
     });
 }
 
 document.addEventListener('keydown', e => {
-    if (gameOver) return;
-    switch (e.key) {
-        case 'ArrowLeft':
-            if (lane > 0) lane--;
-            break;
-        case 'ArrowRight':
-            if (lane < laneCount - 1) lane++;
-            break;
-        case 'ArrowUp':
-            speed = Math.min(maxSpeed, speed + 1);
-            break;
-        case 'ArrowDown':
-            speed = Math.max(minSpeed, speed - 1);
-            break;
-    }
+    keys[e.key] = true;
+});
+
+document.addEventListener('keyup', e => {
+    keys[e.key] = false;
 });
 
 startBtn.addEventListener('click', () => {
