@@ -994,9 +994,11 @@
                         return;
                     }
 
-                    const currentFruit = FRUITS_DATA.find(f => f.id === bodyA.fruitId); 
-                    if (currentFruit && currentFruit.nextId !== null) { 
-                        const posA = { ...bodyA.position }; 
+                    const currentFruit = FRUITS_DATA.find(f => f.id === bodyA.fruitId);
+                    if (!currentFruit) return;
+
+                    if (currentFruit.nextId !== null) {
+                        const posA = { ...bodyA.position };
                         const posB = { ...bodyB.position };
 
                         World.remove(world, bodyA);
@@ -1037,6 +1039,33 @@
                         }
                         score += mergeScore;
                         createScorePopup(mergeX, mergeY, mergeScore);
+                        updateScoreDisplay();
+                    } else {
+                        const posA = { ...bodyA.position };
+                        const posB = { ...bodyB.position };
+
+                        World.remove(world, bodyA);
+                        World.remove(world, bodyB);
+
+                        const popX = (posA.x + posB.x) / 2;
+                        const popY = (posA.y + posB.y) / 2;
+                        mergeEffectQueue.push({ x: popX, y: popY, radius: currentFruit.radius, life: 20 });
+                        playSound('merge', Tone.Frequency(currentFruit.id + 60, "midi").toNote());
+
+                        let popScore = currentFruit.points * 3;
+                        const currentTime = Date.now();
+                        if (currentTime - lastMergeTime < COMBO_WINDOW_MS) {
+                            comboCounter++;
+                        } else {
+                            comboCounter = 1;
+                        }
+                        lastMergeTime = currentTime;
+                        if (comboCounter > 1) {
+                            popScore += COMBO_BASE_SCORE_BONUS * comboCounter;
+                            showComboText(comboCounter);
+                        }
+                        score += popScore;
+                        createScorePopup(popX, popY, popScore);
                         updateScoreDisplay();
                     }
                 }
