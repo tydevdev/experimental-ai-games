@@ -57,27 +57,31 @@ High scores are now managed by `score-manager.js`, which keeps a simple per-game
 
 This project tracks which language model produced each major piece of code. The log below summarizes notable updates.
 
-- **2025-05-12:** Initial Sudoku prototype and index page created with **Gemini**.
-- **2025-05-15:** Added Whack‑A‑Moji, Tap Blitz!, Doodle Dash, Tetris, Duck Council and Fruit Fusion using **Gemini**.
-- **2025-05-16:** Minor fixes, renames and README updates driven by **Gemini**.
-- **2025-06-04:** Added a global leaderboard and addressed various bugs with **Codex** assistance.
-- **2025-06-04:** Introduced the **Memory Match** game, built entirely with **Codex**.
-- **2025-06-04:** Codex adjustments to the global leaderboard and Fruit Fusion difficulty plus expanded documentation.
+> **Note for AI maintainers**
+> Use the actual calendar date for each entry rather than automatically incrementing the previous day. Keep the list sequential by recording a change number as shown below.
 
-- **2025-06-04:** Refreshed the landing page and README with separate
+1. **2025-05-12:** Initial Sudoku prototype and index page created with **Gemini**.
+2. **2025-05-15:** Added Whack‑A‑Moji, Tap Blitz!, Doodle Dash, Tetris, Duck Council and Fruit Fusion using **Gemini**.
+3. **2025-05-16:** Minor fixes, renames and README updates driven by **Gemini**.
+4. **2025-06-04:** Added a global leaderboard and addressed various bugs with **Codex** assistance.
+5. **2025-06-04:** Introduced the **Memory Match** game, built entirely with **Codex**.
+6. **2025-06-04:** Codex adjustments to the global leaderboard and Fruit Fusion difficulty plus expanded documentation.
+
+7. **2025-06-04:** Refreshed the landing page and README with separate
   "experiences" section using **Codex**.
 
-- **2025-06-05:** Added the "Whale Wonders" informational site and updated the
+8. **2025-06-05:** Added the "Whale Wonders" informational site and updated the
   main menu with a new Websites category using **Codex**.
-- **2025-06-06:** Major upgrade to Whale Wonders with an interactive carousel, additional pages and new UI elements using **Codex**.
-- **2025-06-07:** Unified leaderboards across all games and added a simple
+9. **2025-06-06:** Major upgrade to Whale Wonders with an interactive carousel, additional pages and new UI elements using **Codex**.
+10. **2025-06-07:** Unified leaderboards across all games and added a simple
   Express server option using **Codex**.
-- **2025-06-07:** Introduced a global player progress system and reorganized the
+11. **2025-06-07:** Introduced a global player progress system and reorganized the
   landing menu using **Codex**.
 
-- **2025-06-08:** Reworked the leaderboard system with a new `ScoreManager` using **Codex**.
-- **2025-06-08:** Removed the global player progress and leaderboard pages using **Codex**.
-- **2025-06-09:** Overhauled Mini Racer with a dynamic track and off-road timer using **Codex**.
-- **2025-06-09:** Added a simple Word Search puzzle using **Codex**.
+12. **2025-06-08:** Reworked the leaderboard system with a new `ScoreManager` using **Codex**.
+13. **2025-06-08:** Removed the global player progress and leaderboard pages using **Codex**.
+14. **2025-06-08:** Overhauled Mini Racer with a dynamic track and off-road timer using **Codex**.
+15. **2025-06-08:** Added a simple Word Search puzzle using **Codex**.
+16. **2025-06-08:** Added guidelines on accurate logging and numbered each entry using **Codex**.
 Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
 
