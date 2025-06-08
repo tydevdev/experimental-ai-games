@@ -27,6 +27,7 @@ Match** was generated with Gemini and later polished using Codex for bug fixes.
 - **Memory Match** – Straightforward card matching made entirely with Codex as
   a reference point.
 
+- **Mini Racer** – Simple top-down racing game controlled with arrow keys.
 ## Other Experiences
 
 Not everything here is a traditional game. The following pages are playful
