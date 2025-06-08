@@ -84,6 +84,5 @@ This project tracks which language model produced each major piece of code. The 
 14. **2025-06-08:** Overhauled Mini Racer with a dynamic track and off-road timer using **Codex**.
 15. **2025-06-08:** Added a simple Word Search puzzle using **Codex**.
 16. **2025-06-08:** Added guidelines on accurate logging and numbered each entry using **Codex**.
-17. **2025-06-08:** Added a human anatomy website and updated the menu using **Codex**.
-Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
+ significant changes here along with the model used so future AI maintainers know the project history.
 

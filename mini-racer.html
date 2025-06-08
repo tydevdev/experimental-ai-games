@@ -75,7 +75,7 @@ const carHeight = 40;
 const carY = canvas.height - carHeight - 20;
 const maxSpeed = 8;
 const accel = 0.2;
-const friction = 0.05;
+const friction = 0.1; // car quickly slows when not accelerating
 const trackLength = 5000;
 
 let track = [];
@@ -163,6 +163,16 @@ function draw() {
         const half = roadWidth / 2;
         ctx.fillStyle = '#555';
         ctx.fillRect(center - half, canvas.height - y - 1, roadWidth, 1);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(center - half, canvas.height - y - 1, 2, 1); // left edge
+        ctx.fillRect(center + half - 2, canvas.height - y - 1, 2, 1); // right edge
+        if (idx % 20 < 10) {
+            ctx.fillRect(center - 1, canvas.height - y - 1, 2, 1); // dashed center line
+        }
+        if (idx >= trackLength - 10) {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(center - half, canvas.height - y - 1, roadWidth, 5); // finish line
+        }
     }
 
     ctx.fillStyle = '#0f0';
@@ -171,7 +181,7 @@ function draw() {
     if (offTrackStart !== null) {
         const remaining = 3 - (performance.now() - offTrackStart) / 1000;
         ctx.fillStyle = '#fff';
-        ctx.font = '24px "Press Start 2P"';
+        ctx.font = '48px "Press Start 2P"';
         ctx.textAlign = 'center';
         ctx.fillText(Math.ceil(remaining), canvas.width / 2, canvas.height / 2);
     }
