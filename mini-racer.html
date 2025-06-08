@@ -198,14 +198,14 @@ function finishRace() {
     const time = (performance.now() - startTime) / 1000;
     const initials = prompt(`Finished in ${time.toFixed(2)}s! Enter your initials (3 letters):`);
     if (initials && /^[A-Za-z]{3}$/.test(initials)) {
-        ScoreManager.add(GAME_KEY, initials.toUpperCase(), -time).then(displayLeaderboard);
+        ScoreManager.add(GAME_KEY, initials.toUpperCase(), time, true).then(displayLeaderboard);
     }
 }
 
 function displayLeaderboard() {
     ScoreManager.load(GAME_KEY).then(entries => {
         leaderList.innerHTML = entries.length === 0 ? '<li>No scores yet!</li>' :
-            entries.map((e, i) => `<li>${i+1}. ${e.name} - ${(-e.score).toFixed(2)}s</li>`).join('');
+            entries.map((e, i) => `<li>${i+1}. ${e.name} - ${e.score.toFixed(2)}s</li>`).join('');
     });
 }
 

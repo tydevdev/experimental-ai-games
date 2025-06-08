@@ -30,10 +30,10 @@ const ScoreManager = {
       return [];
     }
   },
-  async add(game, name, score) {
+  async add(game, name, score, ascending = false) {
     const list = await this.load(game);
     list.push({ name, score });
-    list.sort((a, b) => b.score - a.score);
+    list.sort((a, b) => ascending ? a.score - b.score : b.score - a.score);
     const trimmed = list.slice(0, this.maxEntries);
     try {
       localStorage.setItem(this.getKey(game), JSON.stringify(trimmed));
