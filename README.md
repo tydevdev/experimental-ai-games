@@ -28,6 +28,7 @@ Match** was generated with Gemini and later polished using Codex for bug fixes.
   a reference point.
 
 - **Mini Racer** – Drive along a curvy track and stay on the road or face a countdown restart.
+- **Word Search** – Pick from several themed puzzles and visual styles to hunt for words.
 ## Other Experiences
 
 Not everything here is a traditional game. The following pages are playful
@@ -77,5 +78,7 @@ This project tracks which language model produced each major piece of code. The 
 - **2025-06-08:** Reworked the leaderboard system with a new `ScoreManager` using **Codex**.
 - **2025-06-08:** Removed the global player progress and leaderboard pages using **Codex**.
 - **2025-06-09:** Overhauled Mini Racer with a dynamic track and off-road timer using **Codex**.
+- **2025-06-09:** Added a simple Word Search puzzle using **Codex**.
+- **2025-06-10:** Expanded Word Search with selectable puzzles and aesthetic themes using **Codex**.
 Please continue appending significant changes here along with the model used so future AI maintainers know the project history.
 
