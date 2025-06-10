@@ -157,7 +157,7 @@
             padding: 5px 0; 
         }
         .next-fruit-queue-display span { font-size: 0.85em; color: #555; } 
-        .fruit-emoji-ui { font-size: 1.4em; } 
+        .fruit-emoji-ui { font-size: 2.1em; }
         #current-aim-emoji { font-weight: bold; transform: scale(1.15); } 
 
 
@@ -425,14 +425,14 @@
         const { Engine, Render, Runner, World, Bodies, Composite, Events, Body } = Matter;
 
         // --- Game Configuration ---
-        const BASE_FRUITS_DATA_STRUCTURE = [ 
-            { id: 0, name: 'Cherry',      radius: 18, emoji: '🍒', points: 1,  nextId: 1 },
-            { id: 1, name: 'Strawberry',  radius: 21, emoji: '🍓', points: 3,  nextId: 2 },
-            { id: 2, name: 'Grape',       radius: 26, emoji: '🍇', points: 6,  nextId: 3 },
-            { id: 3, name: 'OrangeSlice', radius: 30, emoji: '🍊', points: 10, nextId: 4 },
-            { id: 4, name: 'Apple',       radius: 40, emoji: '🍎', points: 21, nextId: 5 },
-            { id: 5, name: 'Pear',        radius: 46, emoji: '🍐', points: 28, nextId: 6 },
-            { id: 6, name: 'Watermelon',  radius: 56, emoji: '🍉', points: 36, nextId: null },
+        const BASE_FRUITS_DATA_STRUCTURE = [
+            { id: 0, name: 'Cherry',      radius: 27,   emoji: '🍒', points: 1,  nextId: 1 },
+            { id: 1, name: 'Strawberry',  radius: 31.5, emoji: '🍓', points: 3,  nextId: 2 },
+            { id: 2, name: 'Grape',       radius: 39,   emoji: '🍇', points: 6,  nextId: 3 },
+            { id: 3, name: 'OrangeSlice', radius: 45,   emoji: '🍊', points: 10, nextId: 4 },
+            { id: 4, name: 'Apple',       radius: 60,   emoji: '🍎', points: 21, nextId: 5 },
+            { id: 5, name: 'Pear',        radius: 69,   emoji: '🍐', points: 28, nextId: 6 },
+            { id: 6, name: 'Watermelon',  radius: 84,   emoji: '🍉', points: 36, nextId: null },
         ];
 
         const THEMES = {
