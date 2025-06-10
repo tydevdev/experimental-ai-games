@@ -984,14 +984,17 @@
             }
         }
 
+        // Award points for merges based on the size of the fused fruit.
+        // The resulting fruit's points act as the base score with a small
+        // bonus from the size of the fruit being merged.
         function calculateMergeScore(baseFruit, resultingFruit) {
-            const sizeFactor = (baseFruit.radius + resultingFruit.radius) / BASE_FRUITS_DATA_STRUCTURE[0].radius;
-            return Math.round(sizeFactor + (resultingFruit.points || 0));
+            return (resultingFruit.points || 0) + Math.round((baseFruit.points || 0) / 2);
         }
 
+        // When the final (largest) fruits fuse and pop, give a big reward but
+        // keep it in a reasonable range.
         function calculatePopScore(fruit) {
-            const sizeFactor = fruit.radius / BASE_FRUITS_DATA_STRUCTURE[0].radius;
-            return Math.round(sizeFactor * (fruit.points || 0));
+            return Math.round((fruit.points || 0) * 4);
         }
         
         function handleCollision(event) {
